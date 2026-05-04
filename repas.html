@@ -52,7 +52,10 @@ let daysWithData = [], editingId = null
 const DAYS = ['L','M','M','J','V','S','D']
 
 async function init() {
-  const { user, profile: p } = await requireAuth()
+  const { data: { session } } = await db.auth.getSession()
+  if (!session) { window.location.replace('login.html'); return }
+  const { data: p } = await db.from('profiles').select('*').eq('id', session.user.id).single()
+  if (!p) { await db.auth.signOut(); window.location.replace('login.html'); return }
   profile = p
   await loadDaysWithData()
   buildCal(viewYear, viewMonth)
@@ -68,9 +71,7 @@ function closeModal(e) {
 
 function openAddModal() {
   editingId = null
-  const todayIso = new Date().toISOString().split('T')[0]
-  const dateLabel = new Date(selDate+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})
-  document.getElementById('modal-title').textContent = selDate === todayIso ? 'Ajouter un repas 🍽️' : `Ajouter — ${dateLabel}`
+  document.getElementById('modal-title').textContent = 'Ajouter un repas'
   document.getElementById('m-name').value = ''
   document.getElementById('m-notes').value = ''
   document.getElementById('m-type').value = 'dejeuner'
@@ -153,7 +154,12 @@ function buildCal(year, month) {
   document.getElementById('cal-section').innerHTML = html
 }
 
-async function selectDay(iso) { selDate = iso; buildCal(viewYear, viewMonth); await loadMeals(); openAddModal() }
+async function selectDay(iso) {
+  selDate = iso
+  buildCal(viewYear, viewMonth)
+  await loadMeals()
+  openAddModal()
+}
 
 async function changeMonth(dir) {
   viewMonth += dir

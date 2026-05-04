@@ -129,9 +129,18 @@ function openEditModal(id, bristolType, notes) {
 }
 
 async function saveLog() {
-  if (!profile) { alert('Session expirée, recharge la page.'); return }
   const btn = document.getElementById('p-btn')
   btn.disabled = true; btn.textContent = '...'
+
+  // Re-check session if profile not loaded yet
+  if (!profile) {
+    const { data: { session } } = await db.auth.getSession()
+    if (!session) { window.location.replace('login.html'); return }
+    const { data: p } = await db.from('profiles').select('*').eq('id', session.user.id).single()
+    if (!p) { window.location.replace('login.html'); return }
+    profile = p
+  }
+
   const score = BRISTOL_SCORE[selectedType]
   const notes = document.getElementById('p-notes').value || null
 
@@ -234,10 +243,13 @@ async function loadLogs() {
 }
 
 async function init() {
-  const { user, profile: p } = await requireAuth()
+  const { data: { session } } = await db.auth.getSession()
+  if (!session) { window.location.replace('login.html'); return }
+  const { data: p } = await db.from('profiles').select('*').eq('id', session.user.id).single()
+  if (!p) { await db.auth.signOut(); window.location.replace('login.html'); return }
   profile = p
   const { data } = await db.from('profiles').select('*').eq('couple_id', profile.couple_id).neq('id', profile.id).maybeSingle()
-  partner = data || null
+  partner = data
   buildDateScroll()
   await loadLogs()
 }
