@@ -39,6 +39,9 @@
 
   // Detect current page
   const path = location.pathname.split('/').pop() || 'index.html';
+
+  // index.html has its own inline sticky bar — skip injection
+  if (path === 'index.html' || path === '') return;
   const PAGES = {
     'index.html':     { key: 'repas',     href: 'repas.html' },
     'repas.html':     { key: 'repas',     href: 'repas.html' },
