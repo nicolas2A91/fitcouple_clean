@@ -71,7 +71,10 @@ function closeModal(e) {
 
 function openAddModal() {
   editingId = null
-  document.getElementById('modal-title').textContent = 'Ajouter un repas'
+  const dateLabel = new Date(selDate+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})
+  document.getElementById('modal-title').textContent = selDate === new Date().toISOString().split('T')[0]
+    ? 'Ajouter un repas aujourd\'hui'
+    : `Ajouter un repas — ${dateLabel}`
   document.getElementById('m-name').value = ''
   document.getElementById('m-notes').value = ''
   document.getElementById('m-type').value = 'dejeuner'

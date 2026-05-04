@@ -129,6 +129,7 @@ function openEditModal(id, bristolType, notes) {
 }
 
 async function saveLog() {
+  if (!profile) { alert('Session expirée, recharge la page.'); return }
   const btn = document.getElementById('p-btn')
   btn.disabled = true; btn.textContent = '...'
   const score = BRISTOL_SCORE[selectedType]
@@ -138,11 +139,15 @@ async function saveLog() {
   if (editingId) {
     ({ error } = await db.from('poop_logs').update({ bristol_type: selectedType, notes, score }).eq('id', editingId))
   } else {
-    // Build logged_at with selDate at current time
+    // Build logged_at: use real time for today, noon local time for other days
     const now = new Date()
-    const logged_at = selDate === today
-      ? now.toISOString()
-      : selDate + 'T12:00:00.000Z'
+    let logged_at
+    if (selDate === today) {
+      logged_at = now.toISOString()
+    } else {
+      // Use local noon to avoid timezone shifting the date
+      logged_at = selDate + 'T12:00:00'
+    }
     ;({ error } = await db.from('poop_logs').insert({
       user_id: profile.id, couple_id: profile.couple_id,
       bristol_type: selectedType, notes, score, logged_at
@@ -238,11 +243,11 @@ async function loadLogs() {
 async function init() {
   const { data: { session } } = await db.auth.getSession()
   if (!session) { window.location.replace('login.html'); return }
-  const { data: p } = await db.from('profiles').select('*').eq('id', session.user.id).single()
-  if (!p) { await db.auth.signOut(); window.location.replace('login.html'); return }
+  const { data: p, error: pErr } = await db.from('profiles').select('*').eq('id', session.user.id).single()
+  if (!p || pErr) { await db.auth.signOut(); window.location.replace('login.html'); return }
   profile = p
   const { data } = await db.from('profiles').select('*').eq('couple_id', profile.couple_id).neq('id', profile.id).maybeSingle()
-  partner = data
+  partner = data || null
   buildDateScroll()
   await loadLogs()
 }
