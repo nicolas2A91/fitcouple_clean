@@ -55,14 +55,14 @@ async function init() {
 
   const today = now.toISOString().split('T')[0]
 
-  // Load all data in parallel
+  try { // Load all data in parallel
   const [mealsRes, challengesRes, poopRes, objRes, streakRes, partnerRes] = await Promise.all([
     db.from('meals').select('*').eq('date', today).eq('couple_id', profile.couple_id),
     db.from('challenges').select('*, challenge_progress(*)').eq('challenge_date', today).eq('couple_id', profile.couple_id),
     db.from('poop_logs').select('*, profiles(name)').eq('couple_id', profile.couple_id).order('logged_at', {ascending:false}).limit(1),
     db.from('objectives').select('*').eq('couple_id', profile.couple_id).eq('completed', false),
     getOrCreateStreak(profile.couple_id),
-    db.from('profiles').select('*').eq('couple_id', profile.couple_id).neq('id', profile.id).single(),
+    db.from('profiles').select('*').eq('couple_id', profile.couple_id).neq('id', profile.id).maybeSingle(),
   ])
 
   const meals = mealsRes.data || []
@@ -155,10 +155,13 @@ async function init() {
       <p style="font-size:11px;margin-top:6px">Ajoutez un repas ou un défi sport</p>
     </div>` : ''}
   `
+  } catch(err) {
+    document.getElementById("content").innerHTML = "<div class=\"empty\"><div class=\"empty-i\">⚠️</div><p>Erreur : " + err.message + "</p></div>"
+  }
 }
 
 async function getOrCreateStreak(coupleId) {
-  const { data } = await db.from('streaks').select('*').eq('couple_id', coupleId).single()
+  const { data } = await db.from('streaks').select('*').eq('couple_id', coupleId).maybeSingle()
   if (data) return data
   const s = { couple_id: coupleId, current_streak: 0, best_streak: 0, last_active_date: new Date().toISOString().split('T')[0] }
   await db.from('streaks').insert(s)
