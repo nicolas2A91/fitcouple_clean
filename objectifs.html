@@ -55,8 +55,25 @@
   </div>
 </div>
 
+<!-- Modal édition -->
+<div class="overlay" id="modal-edit" onclick="if(event.target===this)closeEditModal()">
+  <div class="modal" style="max-height:85vh;overflow-y:auto">
+    <div class="mhandle"></div>
+    <div class="mtitle">Modifier l'objectif ✏️</div>
+    <div class="ig"><label>Titre</label><input class="inp" id="e-title" placeholder="Mon objectif..." required></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="ig"><label>Cible</label><input class="inp" id="e-target" type="number" required></div>
+      <div class="ig"><label>Unité</label><input class="inp" id="e-unit" required></div>
+    </div>
+    <div class="ig"><label>Valeur actuelle</label><input class="inp" id="e-current" type="number" min="0"></div>
+    <div class="ig" style="margin-bottom:20px"><label>Échéance (optionnel)</label><input class="inp" id="e-deadline" type="date"></div>
+    <button class="btn btn-p" onclick="saveEdit()">Enregistrer ✏️</button>
+    <button class="btn btn-g" style="margin-top:8px" onclick="closeEditModal()">Annuler</button>
+  </div>
+</div>
+
 <script>
-let profile
+let profile, editingObjId = null
 
 const TEMPLATES = [
   { title:"Boire 2L d'eau/jour", target:30, unit:'jours', shared:false },
@@ -68,6 +85,39 @@ const TEMPLATES = [
 ]
 
 function closeModal(e) { if(e.target===document.getElementById('modal')) document.getElementById('modal').classList.remove('open') }
+function closeEditModal() { document.getElementById('modal-edit').classList.remove('open'); editingObjId = null }
+
+function openEditObj(o) {
+  editingObjId = o.id
+  document.getElementById('e-title').value = o.title
+  document.getElementById('e-target').value = o.target
+  document.getElementById('e-unit').value = o.unit
+  document.getElementById('e-current').value = o.current_value
+  document.getElementById('e-deadline').value = o.deadline || ''
+  document.getElementById('modal-edit').classList.add('open')
+}
+
+async function saveEdit() {
+  if (!editingObjId) return
+  const newCurrent = +document.getElementById('e-current').value
+  const newTarget = +document.getElementById('e-target').value
+  await db.from('objectives').update({
+    title: document.getElementById('e-title').value,
+    target: newTarget,
+    unit: document.getElementById('e-unit').value,
+    current_value: newCurrent,
+    deadline: document.getElementById('e-deadline').value || null,
+    completed: newCurrent >= newTarget
+  }).eq('id', editingObjId)
+  closeEditModal()
+  await loadAll()
+}
+
+async function deleteObj(id) {
+  if (!confirm('Supprimer cet objectif ?')) return
+  await db.from('objectives').delete().eq('id', id)
+  await loadAll()
+}
 
 function pickTemplate(t) {
   document.getElementById('o-title').value = t.title
@@ -115,7 +165,6 @@ async function loadAll() {
       </div>
     </div>`
 
-  // Shared objectives
   const shared = active.filter(o => o.is_shared)
   document.getElementById('shared-section').innerHTML = shared.length === 0 ? '' : `
     <div class="slabel">🤝 Objectifs communs</div>
@@ -135,6 +184,7 @@ async function loadAll() {
         <span style="font-size:14px">🏆</span>
         <div style="flex:1;font-size:13px;color:var(--muted);text-decoration:line-through">${o.title}</div>
         <span class="badge b-green">FAIT</span>
+        ${o.user_id === profile.id ? `<button onclick="deleteObj('${o.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;padding:0 4px;margin-left:4px">🗑️</button>` : ''}
       </div>`).join('')}</div>`
 
   if (active.length === 0) {
@@ -147,6 +197,8 @@ async function loadAll() {
 function objCard(o, isShared) {
   const pct = Math.min(100, Math.round((o.current_value / o.target) * 100))
   const deadline = o.deadline ? `<span style="font-size:11px;color:var(--muted)">📅 ${new Date(o.deadline).toLocaleDateString('fr-FR',{day:'numeric',month:'short'})}</span>` : ''
+  const isOwner = o.user_id === profile.id
+  const objJson = encodeURIComponent(JSON.stringify(o))
   return `<div class="card">
     <div class="card-hdr"><span class="card-title">${o.title}</span>${deadline}</div>
     <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
@@ -156,9 +208,17 @@ function objCard(o, isShared) {
     <div class="prog" style="margin-bottom:10px">
       <div class="prog-fill" style="width:${pct}%;background:${isShared?'var(--green)':'var(--anna)'}"></div>
     </div>
-    <button class="${isShared?'btn btn-o':'btn btn-g'}" style="font-size:12px;padding:7px" onclick="increment('${o.id}',${o.current_value},${o.target})">
-      + Progresser
-    </button>
+    <div style="display:flex;gap:8px">
+      <button class="${isShared?'btn btn-o':'btn btn-g'}" style="flex:1;font-size:12px;padding:7px" onclick="increment('${o.id}',${o.current_value},${o.target})">
+        + Progresser
+      </button>
+      ${isOwner ? `
+        <button onclick="editObjFromBtn(this)" data-obj="${objJson}"
+          style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:0 8px" title="Modifier">✏️</button>
+        <button onclick="deleteObj('${o.id}')"
+          style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:0 6px" title="Supprimer">🗑️</button>
+      ` : ''}
+    </div>
   </div>`
 }
 
@@ -203,6 +263,11 @@ async function addObjective(e) {
   document.getElementById('modal').classList.remove('open')
   btn.textContent = "Créer l'objectif 🎯"
   await loadAll()
+}
+
+function editObjFromBtn(btn) {
+  const o = JSON.parse(decodeURIComponent(btn.dataset.obj))
+  openEditObj(o)
 }
 
 async function init() {

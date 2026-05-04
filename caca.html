@@ -226,7 +226,8 @@ async function loadLogs() {
           </div>
           <span class="badge ${SCORE_BADGE[l.score]||'b-gray'}">${l.score}</span>
           ${isMe ? `
-            <button onclick="openEditModal('${l.id}',${l.bristol_type},${JSON.stringify(l.notes||'')})"
+            <button onclick="editLogFromBtn(this)"
+              data-id="${l.id}" data-type="${l.bristol_type}" data-notes="${(l.notes||'').replace(/"/g,'&quot;')}"
               style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;padding:0 4px;margin-left:4px">✏️</button>
             <button onclick="deleteLog('${l.id}')"
               style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;padding:0 4px">🗑️</button>
@@ -234,6 +235,10 @@ async function loadLogs() {
         </div>`
       }).join('')}
     </div>`
+}
+
+function editLogFromBtn(btn) {
+  openEditModal(btn.dataset.id, +btn.dataset.type, btn.dataset.notes)
 }
 
 async function init() {

@@ -30,7 +30,21 @@
   <a href="poids.html"><span class="ni">⚖️</span><span class="nl">Poids</span></a>
 </nav>
 
-<!-- Modal -->
+<!-- Modal progression -->
+<div class="overlay" id="modal-progress" onclick="if(event.target===this)document.getElementById('modal-progress').classList.remove('open')">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle">Ma progression ⚡</div>
+    <div class="ig">
+      <label id="prog-label">Valeur actuelle</label>
+      <input class="inp" id="prog-value" type="number" min="0" placeholder="0">
+    </div>
+    <button class="btn btn-p" style="margin-bottom:8px" onclick="saveProgress()">Enregistrer 💪</button>
+    <button class="btn btn-g" onclick="document.getElementById('modal-progress').classList.remove('open')">Annuler</button>
+  </div>
+</div>
+
+<!-- Modal créer défi -->
 <div class="overlay" id="modal" onclick="closeModal(event)">
   <div class="modal">
     <div class="mhandle"></div>
@@ -134,20 +148,38 @@ async function loadChallenges() {
       </div>` : ''}
 
       ${!myP?.completed
-        ? `<button class="btn btn-o" style="font-size:12px;padding:8px" onclick="updateProgress('${c.id}',${myP?.value||0},${c.target})">+ Mettre à jour ma progression</button>`
+        ? `<button class="btn btn-o" style="font-size:12px;padding:8px" onclick="openProgressModal('${c.id}',${myP?.value||0},${c.target},'${c.unit}')">+ Mettre à jour ma progression</button>`
         : `<div style="text-align:center;font-size:13px;color:var(--anna);padding:6px 0">🎉 Bravo ! Défi terminé !</div>`}
+      <button onclick="deleteChallenge('${c.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px;width:100%;margin-top:8px;text-align:right">🗑️ Supprimer ce défi</button>
     </div>`
   }).join('')
 }
 
-async function updateProgress(id, current, target) {
-  const step = Math.max(1, Math.round(target * 0.1))
-  const newVal = Math.min(target, current + step)
+let progressChallengeId = null, progressTarget = 0
+
+function openProgressModal(id, current, target, unit) {
+  progressChallengeId = id
+  progressTarget = target
+  document.getElementById('prog-label').textContent = `Valeur actuelle (sur ${target} ${unit})`
+  document.getElementById('prog-value').value = current
+  document.getElementById('modal-progress').classList.add('open')
+}
+
+async function saveProgress() {
+  const val = Math.min(progressTarget, Math.max(0, +document.getElementById('prog-value').value))
   await db.from('challenge_progress').upsert({
-    challenge_id: id, user_id: profile.id,
-    value: newVal, completed: newVal >= target,
+    challenge_id: progressChallengeId, user_id: profile.id,
+    value: val, completed: val >= progressTarget,
     updated_at: new Date().toISOString()
   }, { onConflict: 'challenge_id,user_id' })
+  document.getElementById('modal-progress').classList.remove('open')
+  await loadChallenges()
+}
+
+async function deleteChallenge(id) {
+  if (!confirm('Supprimer ce défi ?')) return
+  await db.from('challenge_progress').delete().eq('challenge_id', id)
+  await db.from('challenges').delete().eq('id', id)
   await loadChallenges()
 }
 
