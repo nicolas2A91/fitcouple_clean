@@ -228,7 +228,8 @@ async function loadMeals() {
               <div style="font-size:11px;color:var(--muted)">${m.profiles?.name||''}${m.notes?' · '+m.notes:''}${m.calories?' · '+m.calories+' kcal':''}</div>
             </div>
             ${m.user_id===profile.id ? `
-              <button onclick="openEditModal('${m.id}','${m.meal_type}',${JSON.stringify(m.name)},${JSON.stringify(m.notes||'')},${m.calories||''})"
+              <button onclick="editMealFromBtn(this)"
+                data-id="${m.id}" data-type="${m.meal_type}" data-name="${(m.name||'').replace(/"/g,'&quot;')}" data-notes="${(m.notes||'').replace(/"/g,'&quot;')}" data-calories="${m.calories||''}"
                 style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;padding:0 6px">✏️</button>
               <button onclick="deleteMeal('${m.id}')"
                 style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;padding:0 4px">🗑️</button>
@@ -242,6 +243,16 @@ async function loadMeals() {
 }
 
 init()
+function editMealFromBtn(btn) {
+  openEditModal(
+    btn.dataset.id,
+    btn.dataset.type,
+    btn.dataset.name,
+    btn.dataset.notes,
+    btn.dataset.calories ? +btn.dataset.calories : ''
+  )
+}
+
 function handleLogout() {
   db.auth.signOut().then(() => window.location.replace('login.html'))
 }
