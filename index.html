@@ -96,7 +96,7 @@
     <!-- Header -->
     <div class="hdr" style="display:flex;justify-content:space-between;align-items:flex-start">
       <div><h1>Dashboard</h1><p>Bienvenue, <span id="user-name">Nico</span> 👋</p></div>
-      <button onclick="db.auth.signOut().then(()=>location.replace('login.html'))" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--muted);padding:4px 0;margin-top:6px">Déconnexion</button>
+      <button onclick="handleLogout()" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--muted);padding:4px 0;margin-top:6px">Déconnexion</button>
     </div>
 
     <!-- Page Content -->
@@ -282,15 +282,21 @@
 
     // ── Init ───────────────────────────────────────────────────────────────────
 
+    function handleLogout() {
+      db.auth.signOut().then(() => window.location.replace('login.html'))
+    }
+
     async function init() {
-      // requireAuth() attend que Supabase restaure la session — évite le bug getUser() = null
-      const { user, profile } = await requireAuth();
+      const { data: { session } } = await db.auth.getSession()
+      if (!session) { window.location.replace('login.html'); return }
+      const { data: profile } = await db.from('profiles').select('*').eq('id', session.user.id).single()
+      if (!profile) { await db.auth.signOut(); window.location.replace('login.html'); return }
 
       try {
         const coupleId = profile.couple_id;
         document.getElementById('user-name').textContent = profile.name || 'Nico';
 
-        const { data: partnerProfile } = await db.from('profiles').select('*').eq('couple_id', coupleId).neq('id', user.id).maybeSingle();
+        const { data: partnerProfile } = await db.from('profiles').select('*').eq('couple_id', coupleId).neq('id', session.user.id).maybeSingle();
         const partnerName = partnerProfile?.name || 'Partenaire';
         const myName = profile.name || 'Moi';
         document.getElementById('dash-partner-cal-label').textContent = partnerName;
@@ -306,7 +312,7 @@
 
         // Calories du jour
         const calEntries = calRes.data || [];
-        const myCal  = calEntries.filter(e => e.user_id === user.id).reduce((s, e) => s + (e.calories||0), 0);
+        const myCal  = calEntries.filter(e => e.user_id === session.user.id).reduce((s, e) => s + (e.calories||0), 0);
         const parCal = calEntries.filter(e => e.user_id !== user.id).reduce((s, e) => s + (e.calories||0), 0);
         const calGoal  = 2000;
         const calPct   = Math.min(100, Math.round((myCal / calGoal) * 100));

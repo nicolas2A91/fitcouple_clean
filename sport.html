@@ -10,7 +10,7 @@
 </head>
 <body>
 <div class="app">
-  <div class="hdr" style="display:flex;justify-content:space-between;align-items:flex-start"><div><h1>Sport ⚡</h1><p>Défis &amp; performances</p></div> <button onclick="db.auth.signOut().then(()=>location.replace('login.html'))" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--muted);padding:4px 0;margin-top:6px">Déconnexion</button></div>
+  <div class="hdr" style="display:flex;justify-content:space-between;align-items:flex-start"><div><h1>Sport ⚡</h1><p>Défis &amp; performances</p></div> <button onclick="handleLogout()" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--muted);padding:4px 0;margin-top:6px">Déconnexion</button></div>
   <div class="page" style="padding-bottom:80px;">
     <div id="date-scroll" class="datescroll"></div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
@@ -194,6 +194,9 @@ async function init() {
   await loadChallenges()
 }
 init()
+function handleLogout() {
+  db.auth.signOut().then(() => window.location.replace('login.html'))
+}
 </script>
 </body>
 </html>
