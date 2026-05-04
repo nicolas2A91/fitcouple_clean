@@ -305,7 +305,7 @@
 
         const [calRes, wMyRes, wPartRes, streak] = await Promise.all([
           db.from('meals').select('user_id, calories').eq('couple_id', coupleId).eq('date', today),
-          db.from('weight_logs').select('weight, date').eq('user_id', user.id).order('date', { ascending: true }).limit(30),
+          db.from('weight_logs').select('weight, date').eq('user_id', session.user.id).order('date', { ascending: true }).limit(30),
           partnerProfile ? db.from('weight_logs').select('weight, date').eq('user_id', partnerProfile.id).order('date', { ascending: true }).limit(30) : Promise.resolve({ data: [] }),
           getOrCreateStreak(coupleId)
         ]);
@@ -313,7 +313,7 @@
         // Calories du jour
         const calEntries = calRes.data || [];
         const myCal  = calEntries.filter(e => e.user_id === session.user.id).reduce((s, e) => s + (e.calories||0), 0);
-        const parCal = calEntries.filter(e => e.user_id !== user.id).reduce((s, e) => s + (e.calories||0), 0);
+        const parCal = calEntries.filter(e => e.user_id !== session.user.id).reduce((s, e) => s + (e.calories||0), 0);
         const calGoal  = 2000;
         const calPct   = Math.min(100, Math.round((myCal / calGoal) * 100));
         const calColor = myCal === 0 ? '#E24B4A' : myCal < 1500 ? '#639922' : myCal < 2200 ? '#F59E0B' : '#E24B4A';
