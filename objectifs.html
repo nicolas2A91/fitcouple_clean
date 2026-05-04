@@ -55,6 +55,20 @@
   </div>
 </div>
 
+<!-- Modal progression objectif -->
+<div class="overlay" id="modal-progress-obj" onclick="if(event.target===this)document.getElementById('modal-progress-obj').classList.remove('open')">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle">Ma progression 🎯</div>
+    <div class="ig">
+      <label id="obj-prog-label">Valeur actuelle</label>
+      <input class="inp" id="obj-prog-value" type="number" min="0" placeholder="0">
+    </div>
+    <button class="btn btn-p" style="margin-bottom:8px" onclick="saveObjProgress()">Enregistrer 💪</button>
+    <button class="btn btn-g" onclick="document.getElementById('modal-progress-obj').classList.remove('open')">Annuler</button>
+  </div>
+</div>
+
 <!-- Modal édition -->
 <div class="overlay" id="modal-edit" onclick="if(event.target===this)closeEditModal()">
   <div class="modal" style="max-height:85vh;overflow-y:auto">
@@ -198,9 +212,23 @@ function objCard(o, isShared) {
   const pct = Math.min(100, Math.round((o.current_value / o.target) * 100))
   const deadline = o.deadline ? `<span style="font-size:11px;color:var(--muted)">📅 ${new Date(o.deadline).toLocaleDateString('fr-FR',{day:'numeric',month:'short'})}</span>` : ''
   const isOwner = o.user_id === profile.id
-  const objJson = encodeURIComponent(JSON.stringify(o))
+  const safeTitle = (o.title||'').replace(/"/g,'&quot;')
+  const safeUnit = (o.unit||'').replace(/"/g,'&quot;')
+  const safeDeadline = o.deadline || ''
   return `<div class="card">
-    <div class="card-hdr"><span class="card-title">${o.title}</span>${deadline}</div>
+    <div class="card-hdr">
+      <span class="card-title">${o.title}</span>
+      <div style="display:flex;align-items:center;gap:4px">
+        ${deadline}
+        ${isOwner ? `
+          <button onclick="openEditObjBtn(this)"
+            data-id="${o.id}" data-title="${safeTitle}" data-target="${o.target}" data-unit="${safeUnit}" data-current="${o.current_value}" data-deadline="${safeDeadline}"
+            style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 3px">✏️</button>
+          <button onclick="deleteObj('${o.id}')"
+            style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 2px">🗑️</button>
+        ` : ''}
+      </div>
+    </div>
     <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
       <span style="color:var(--muted)">${o.current_value} / ${o.target} ${o.unit}</span>
       <span style="color:var(--green);font-weight:600">${pct}%</span>
@@ -208,25 +236,26 @@ function objCard(o, isShared) {
     <div class="prog" style="margin-bottom:10px">
       <div class="prog-fill" style="width:${pct}%;background:${isShared?'var(--green)':'var(--anna)'}"></div>
     </div>
-    <div style="display:flex;gap:8px">
-      <button class="${isShared?'btn btn-o':'btn btn-g'}" style="flex:1;font-size:12px;padding:7px" onclick="increment('${o.id}',${o.current_value},${o.target})">
-        + Progresser
-      </button>
-      ${isOwner ? `
-        <button onclick="editObjFromBtn(this)" data-obj="${objJson}"
-          style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:0 8px" title="Modifier">✏️</button>
-        <button onclick="deleteObj('${o.id}')"
-          style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:0 6px" title="Supprimer">🗑️</button>
-      ` : ''}
-    </div>
+    <button class="${isShared?'btn btn-o':'btn btn-g'}" style="font-size:12px;padding:7px" onclick="openObjProgressModal('${o.id}',${o.current_value},${o.target},'${safeUnit}')">
+      + Mettre à jour ma progression
+    </button>
   </div>`
 }
 
-async function increment(id, current, target) {
-  const step = Math.max(1, Math.round(target * 0.05))
-  const newVal = Math.min(target, current + step)
-  const completed = newVal >= target
-  await db.from('objectives').update({ current_value: newVal, completed }).eq('id', id)
+let progressObjId = null, progressObjTarget = 0
+
+function openObjProgressModal(id, current, target, unit) {
+  progressObjId = id
+  progressObjTarget = target
+  document.getElementById('obj-prog-label').textContent = `Valeur actuelle (sur ${target} ${unit})`
+  document.getElementById('obj-prog-value').value = current
+  document.getElementById('modal-progress-obj').classList.add('open')
+}
+
+async function saveObjProgress() {
+  const val = Math.min(progressObjTarget, Math.max(0, +document.getElementById('obj-prog-value').value))
+  const completed = val >= progressObjTarget
+  await db.from('objectives').update({ current_value: val, completed }).eq('id', progressObjId)
 
   // Update streak
   const today = new Date().toISOString().split('T')[0]
@@ -242,7 +271,18 @@ async function increment(id, current, target) {
     await db.from('streaks').insert({ couple_id: profile.couple_id, current_streak: 1, best_streak: 1, last_active_date: today })
   }
 
+  document.getElementById('modal-progress-obj').classList.remove('open')
   await loadAll()
+}
+
+function openEditObjBtn(btn) {
+  editingObjId = btn.dataset.id
+  document.getElementById('e-title').value = btn.dataset.title
+  document.getElementById('e-target').value = btn.dataset.target
+  document.getElementById('e-unit').value = btn.dataset.unit
+  document.getElementById('e-current').value = btn.dataset.current
+  document.getElementById('e-deadline').value = btn.dataset.deadline
+  document.getElementById('modal-edit').classList.add('open')
 }
 
 async function addObjective(e) {
@@ -263,11 +303,6 @@ async function addObjective(e) {
   document.getElementById('modal').classList.remove('open')
   btn.textContent = "Créer l'objectif 🎯"
   await loadAll()
-}
-
-function editObjFromBtn(btn) {
-  const o = JSON.parse(decodeURIComponent(btn.dataset.obj))
-  openEditObj(o)
 }
 
 async function init() {

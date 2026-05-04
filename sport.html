@@ -30,6 +30,22 @@
   <a href="poids.html"><span class="ni">⚖️</span><span class="nl">Poids</span></a>
 </nav>
 
+<!-- Modal modifier défi -->
+<div class="overlay" id="modal-edit-challenge" onclick="if(event.target===this)closeEditChallenge()">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle">Modifier le défi ✏️</div>
+    <div class="ig"><label>Nom du défi</label><input class="inp" id="ec-title" placeholder="Nom..."></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="ig"><label>Objectif</label><input class="inp" id="ec-target" type="number"></div>
+      <div class="ig"><label>Unité</label><input class="inp" id="ec-unit"></div>
+    </div>
+    <div class="ig" style="margin-bottom:20px"><label>Description (optionnel)</label><input class="inp" id="ec-desc" placeholder="Détails..."></div>
+    <button class="btn btn-p" style="margin-bottom:8px" onclick="saveEditChallenge()">Enregistrer ✏️</button>
+    <button class="btn btn-g" onclick="closeEditChallenge()">Annuler</button>
+  </div>
+</div>
+
 <!-- Modal progression -->
 <div class="overlay" id="modal-progress" onclick="if(event.target===this)document.getElementById('modal-progress').classList.remove('open')">
   <div class="modal">
@@ -121,7 +137,15 @@ async function loadChallenges() {
     return `<div class="card">
       <div class="card-hdr">
         <span class="card-title" style="font-size:14px">${c.title}</span>
-        ${myP?.completed ? '<span class="badge b-green">TERMINÉ ✓</span>' : ''}
+        <div style="display:flex;align-items:center;gap:6px">
+          ${myP?.completed ? '<span class="badge b-green">TERMINÉ ✓</span>' : ''}
+          ${c.created_by === profile.id ? `
+            <button onclick="openEditChallenge(this)" data-id="${c.id}" data-title="${(c.title||'').replace(/"/g,'&quot;')}" data-target="${c.target}" data-unit="${(c.unit||'').replace(/"/g,'&quot;')}" data-desc="${(c.description||'').replace(/"/g,'&quot;')}"
+              style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 2px">✏️</button>
+            <button onclick="deleteChallenge('${c.id}')"
+              style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 2px">🗑️</button>
+          ` : ''}
+        </div>
       </div>
       ${c.description ? `<p style="font-size:12px;color:var(--muted);margin-bottom:10px">${c.description}</p>` : ''}
 
@@ -150,12 +174,39 @@ async function loadChallenges() {
       ${!myP?.completed
         ? `<button class="btn btn-o" style="font-size:12px;padding:8px" onclick="openProgressModal('${c.id}',${myP?.value||0},${c.target},'${c.unit}')">+ Mettre à jour ma progression</button>`
         : `<div style="text-align:center;font-size:13px;color:var(--anna);padding:6px 0">🎉 Bravo ! Défi terminé !</div>`}
-      <button onclick="deleteChallenge('${c.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px;width:100%;margin-top:8px;text-align:right">🗑️ Supprimer ce défi</button>
     </div>`
   }).join('')
 }
 
 let progressChallengeId = null, progressTarget = 0
+let editingChallengeId = null
+
+function openEditChallenge(btn) {
+  editingChallengeId = btn.dataset.id
+  document.getElementById('ec-title').value = btn.dataset.title
+  document.getElementById('ec-target').value = btn.dataset.target
+  document.getElementById('ec-unit').value = btn.dataset.unit
+  document.getElementById('ec-desc').value = btn.dataset.desc
+  document.getElementById('modal-edit-challenge').classList.add('open')
+}
+
+function closeEditChallenge() {
+  document.getElementById('modal-edit-challenge').classList.remove('open')
+  editingChallengeId = null
+}
+
+async function saveEditChallenge() {
+  if (!editingChallengeId) return
+  const newTarget = +document.getElementById('ec-target').value
+  await db.from('challenges').update({
+    title: document.getElementById('ec-title').value,
+    target: newTarget,
+    unit: document.getElementById('ec-unit').value,
+    description: document.getElementById('ec-desc').value || null
+  }).eq('id', editingChallengeId)
+  closeEditChallenge()
+  await loadChallenges()
+}
 
 function openProgressModal(id, current, target, unit) {
   progressChallengeId = id
