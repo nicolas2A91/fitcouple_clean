@@ -3,172 +3,71 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <title>FitCouple — Dashboard</title>
+  <title>FitCouple — Debug</title>
   <link rel="stylesheet" href="style.css">
-  <link rel="manifest" href="manifest.json">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="config.js"></script>
 </head>
 <body>
-<div class="app">
-  <div class="hdr">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start">
-      <div>
-        <p id="date-label" style="font-size:12px;color:var(--muted);text-transform:capitalize"></p>
-        <h1 id="greeting">Bonjour 👋</h1>
-      </div>
-      <button onclick="logout()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;margin-top:4px">⏎</button>
-    </div>
-  </div>
-
-  <div class="page" id="content">
-    <div class="loading">⚡ Chargement...</div>
-  </div>
+<div style="padding:20px;font-family:monospace;font-size:13px;color:#fff;background:#111;min-height:100vh">
+  <h2 style="color:#1D9E75;margin-bottom:16px">🔍 Debug Auth</h2>
+  <div id="log"></div>
 </div>
-
-<!-- Bottom Nav -->
-<nav class="nav">
-  <a href="index.html" class="active"><span class="ni">🏠</span><span class="nl">Home</span><div class="nd"></div></a>
-  <a href="repas.html"><span class="ni">📅</span><span class="nl">Repas</span></a>
-  <a href="sport.html"><span class="ni">⚡</span><span class="nl">Sport</span></a>
-  <a href="caca.html"><span class="ni">💩</span><span class="nl">Caca</span></a>
-  <a href="objectifs.html"><span class="ni">🎯</span><span class="nl">Objectifs</span></a>
-</nav>
-
 <script>
-async function logout() {
-  await db.auth.signOut()
-  window.location.href = 'login.html'
+function log(msg, color) {
+  const d = document.getElementById('log')
+  const line = document.createElement('div')
+  line.style.cssText = 'padding:6px 0;border-bottom:1px solid #222;color:' + (color||'#ccc')
+  line.textContent = new Date().toLocaleTimeString() + ' — ' + msg
+  d.appendChild(line)
 }
 
-async function init() {
-  const auth = await requireAuth()
-  if (!auth) return
-  const { profile } = auth
+async function run() {
+  log('Démarrage...', '#888')
 
-  // Date label
-  const now = new Date()
-  document.getElementById('date-label').textContent = now.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' })
-  document.getElementById('greeting').textContent = `Bonjour ${profile.name} 👋`
+  try {
+    log('1. Test getSession()...')
+    const { data: { session }, error: e1 } = await db.auth.getSession()
+    if (e1) { log('❌ getSession error: ' + e1.message, '#f55'); return }
+    if (!session) {
+      log('⚠️ Pas de session locale — non connecté ?', '#EF9F27')
+      log('👉 Tu dois être connecté pour voir cette page', '#EF9F27')
+      log('→ Va sur login.html et connecte-toi', '#888')
+      return
+    }
+    log('✅ Session OK — user: ' + session.user.email, '#1D9E75')
+    log('   user.id: ' + session.user.id, '#888')
 
-  const today = now.toISOString().split('T')[0]
+    log('2. Test lecture profil...')
+    const { data: profile, error: e2 } = await db.from('profiles').select('*').eq('id', session.user.id).single()
+    if (e2) { log('❌ Profil error: ' + e2.message, '#f55'); return }
+    if (!profile) { log('❌ Aucun profil trouvé pour cet user', '#f55'); return }
+    log('✅ Profil OK — name: ' + profile.name + ', couple_id: ' + profile.couple_id, '#1D9E75')
 
-  try { // Load all data in parallel
-  const [mealsRes, challengesRes, poopRes, objRes, streakRes, partnerRes] = await Promise.all([
-    db.from('meals').select('*').eq('date', today).eq('couple_id', profile.couple_id),
-    db.from('challenges').select('*, challenge_progress(*)').eq('challenge_date', today).eq('couple_id', profile.couple_id),
-    db.from('poop_logs').select('*, profiles(name)').eq('couple_id', profile.couple_id).order('logged_at', {ascending:false}).limit(1),
-    db.from('objectives').select('*').eq('couple_id', profile.couple_id).eq('completed', false),
-    getOrCreateStreak(profile.couple_id),
-    db.from('profiles').select('*').eq('couple_id', profile.couple_id).neq('id', profile.id).maybeSingle(),
-  ])
+    log('3. Test lecture meals...')
+    const { data: meals, error: e3 } = await db.from('meals').select('*').limit(1)
+    if (e3) { log('❌ Meals error: ' + e3.message, '#f55') } 
+    else { log('✅ Meals OK (' + (meals?.length||0) + ' résultats)', '#1D9E75') }
 
-  const meals = mealsRes.data || []
-  const challenges = challengesRes.data || []
-  const poop = poopRes.data || []
-  const objectives = objRes.data || []
-  const streak = streakRes
-  const partner = partnerRes.data
+    log('4. Test streak...')
+    const { data: streak, error: e4 } = await db.from('streaks').select('*').eq('couple_id', profile.couple_id).maybeSingle()
+    if (e4) { log('❌ Streak error: ' + e4.message, '#f55') }
+    else { log('✅ Streak OK: ' + JSON.stringify(streak), '#1D9E75') }
 
-  // Compute stats
-  const challengesDone = challenges.filter(c => c.challenge_progress?.some(p => p.user_id === profile.id && p.completed)).length
-  const myTodayPoop = poop.filter(p => p.user_id === profile.id && p.logged_at.startsWith(today)).length
-  const objPct = objectives.length ? Math.round(objectives.reduce((s,o) => s + Math.min(100, o.current_value/o.target*100), 0) / objectives.length) : 0
+    log('5. Test partner...')
+    const { data: partner, error: e5 } = await db.from('profiles').select('*').eq('couple_id', profile.couple_id).neq('id', profile.id).maybeSingle()
+    if (e5) { log('❌ Partner error: ' + e5.message, '#f55') }
+    else { log('✅ Partner: ' + (partner ? partner.name : 'aucun encore'), '#1D9E75') }
 
-  const SCORE_BADGE = {'A+':'b-green','A':'b-teal','B':'b-amber','C':'b-coral','D':'b-coral'}
-  const streakLabel = streak.current_streak >= 7 ? '🔥 EN FEU' : streak.current_streak >= 3 ? '⚡ EN ROUTE' : '🌱 DÉBUT'
+    log('━━━ TOUT OK ━━━ Le dashboard devrait marcher', '#1D9E75')
+    log('→ Retourne sur index.html', '#888')
 
-  document.getElementById('content').innerHTML = `
-    <!-- Streak -->
-    <div class="streak">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div style="display:flex;align-items:center;gap:10px">
-          <div class="av av-a">${profile.name[0]}</div>
-          ${partner ? `<div class="av av-b">${partner.name[0]}</div>` : ''}
-          <div>
-            <div style="font-size:12px;color:var(--muted)">Streak couple</div>
-            <div style="font-size:11px;color:var(--dim)">Record : ${streak.best_streak} j</div>
-          </div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-size:32px;font-weight:800;color:var(--amber);line-height:1">${streak.current_streak}</div>
-          <span class="badge b-teal">${streakLabel}</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Stats -->
-    <div class="slabel">Aujourd'hui</div>
-    <div class="stats">
-      <div class="stat"><div class="stat-v" style="color:var(--anna)">🥗 ${meals.length}</div><div class="stat-l">Repas</div></div>
-      <div class="stat"><div class="stat-v" style="color:var(--green)">⚡ ${challengesDone}/${challenges.length}</div><div class="stat-l">Défis</div></div>
-      <div class="stat"><div class="stat-v" style="color:var(--amber)">💩 ${myTodayPoop}</div><div class="stat-l">Passages</div></div>
-      <div class="stat"><div class="stat-v" style="color:var(--coral)">🎯 ${objPct}%</div><div class="stat-l">Objectifs</div></div>
-    </div>
-
-    ${challenges.length ? `
-    <!-- Défi du jour -->
-    <div class="slabel">Défi du jour</div>
-    ${challenges.slice(0,2).map(c => {
-      const myP = c.challenge_progress?.find(p => p.user_id === profile.id)
-      const pct = c.target > 0 ? Math.min(100, Math.round(((myP?.value||0)/c.target)*100)) : 0
-      return `<div class="card">
-        <div class="card-hdr"><span class="card-title">${c.title}</span>
-          <span class="badge ${myP?.completed ? 'b-green' : 'b-amber'}">${myP?.completed ? 'FAIT ✓' : 'EN COURS'}</span>
-        </div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:6px">${myP?.value||0} / ${c.target} ${c.unit}</div>
-        <div class="prog"><div class="prog-fill" style="width:${pct}%;background:${myP?.completed?'var(--anna)':'var(--green)'}"></div></div>
-      </div>`
-    }).join('')}` : ''}
-
-    ${meals.length ? `
-    <!-- Repas -->
-    <div class="slabel">Repas du jour</div>
-    <div class="card">
-      ${meals.slice(0,4).map(m => `
-      <div class="row-item">
-        <div class="udot ${m.user_id === profile.id ? 'dot-a' : 'dot-n'}"></div>
-        <div style="font-size:13px">${m.name}</div>
-      </div>`).join('')}
-    </div>` : ''}
-
-    ${poop.length ? `
-    <!-- Dernier passage -->
-    <div class="slabel">Dernier passage</div>
-    <div class="card">
-      <div class="row-item" style="padding-top:0;padding-bottom:0">
-        <div class="av ${poop[0].user_id === profile.id ? 'av-a' : 'av-b'}" style="font-size:10px">${poop[0].profiles?.name?.[0]||'?'}</div>
-        <div style="flex:1">
-          <div style="font-size:13px">${BRISTOL_EMOJI[poop[0].bristol_type]} Type ${poop[0].bristol_type}</div>
-          <div style="font-size:11px;color:var(--muted)">${new Date(poop[0].logged_at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</div>
-        </div>
-        <span class="badge ${SCORE_BADGE[poop[0].score]||'b-gray'}">${poop[0].score}</span>
-      </div>
-    </div>` : ''}
-
-    ${meals.length === 0 && challenges.length === 0 ? `
-    <div class="empty" style="margin-top:24px">
-      <div class="empty-i">🚀</div>
-      <p>Commencez votre journée !</p>
-      <p style="font-size:11px;margin-top:6px">Ajoutez un repas ou un défi sport</p>
-    </div>` : ''}
-  `
   } catch(err) {
-    document.getElementById("content").innerHTML = "<div class=\"empty\"><div class=\"empty-i\">⚠️</div><p>Erreur : " + err.message + "</p></div>"
+    log('💥 Exception: ' + err.message, '#f55')
+    log(err.stack, '#f55')
   }
 }
-
-async function getOrCreateStreak(coupleId) {
-  const { data } = await db.from('streaks').select('*').eq('couple_id', coupleId).maybeSingle()
-  if (data) return data
-  const s = { couple_id: coupleId, current_streak: 0, best_streak: 0, last_active_date: new Date().toISOString().split('T')[0] }
-  await db.from('streaks').insert(s)
-  return s
-}
-
-init()
+run()
 </script>
 </body>
 </html>
