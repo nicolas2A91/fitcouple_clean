@@ -11,7 +11,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="config.js"></script>
   <style>
-    /* Styles existants (gardés) */
+    /* Styles existants */
     .quick-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -77,7 +77,7 @@
       cursor: pointer;
     }
 
-    /* Nouveaux styles pour les onglets */
+    /* Onglets (pour la navigation) */
     .tabs {
       display: flex;
       background: var(--surface2);
@@ -85,6 +85,10 @@
       padding: 4px;
       margin-bottom: 16px;
       border: 1px solid var(--border);
+      position: sticky;
+      top: 72px; /* Hauteur du header */
+      z-index: 10;
+      backdrop-filter: blur(10px);
     }
     .tab {
       flex: 1;
@@ -106,13 +110,10 @@
       box-shadow: var(--shadow-sm);
     }
 
-    /* Style pour les sections masquées */
+    /* Sections (toujours visibles) */
     .tab-section {
-      display: none;
-    }
-    .tab-section.active {
-      display: block;
-      animation: slideUp .3s ease both;
+      margin-bottom: 20px;
+      scroll-margin-top: 140px; /* Pour compenser le header + onglets */
     }
 
     /* Streak Card */
@@ -199,47 +200,66 @@
 
       <!-- Quick Stats Grid -->
       <div class="quick-grid">
-        <div class="qcard repas" onclick="switchTab('meals')">
+        <div class="qcard repas" onclick="scrollToSection('meals-section')">
           <span class="qcard-emoji">🥗</span>
           <div class="qcard-val" id="meal-count">0</div>
           <div class="qcard-label">Repas</div>
         </div>
-        <div class="qcard defis" onclick="switchTab('challenges')">
+        <div class="qcard defis" onclick="scrollToSection('challenges-section')">
           <span class="qcard-emoji">⚡</span>
           <div class="qcard-val" id="challenge-count">0/0</div>
           <div class="qcard-label">Défis</div>
         </div>
-        <div class="qcard passages" onclick="switchTab('poop')">
+        <div class="qcard passages" onclick="scrollToSection('poop-section')">
           <span class="qcard-emoji">💩</span>
           <div class="qcard-val" id="poop-count">0</div>
           <div class="qcard-label">Passages</div>
         </div>
-        <div class="qcard objectifs" onclick="switchTab('goals')">
+        <div class="qcard objectifs" onclick="scrollToSection('goals-section')">
           <span class="qcard-emoji">🎯</span>
           <div class="qcard-val" id="goal-percent">0%</div>
           <div class="qcard-label">Objectifs</div>
         </div>
       </div>
 
-      <!-- Onglets -->
+      <!-- Onglets (pour la navigation) -->
       <div class="tabs">
-        <button class="tab active" onclick="switchTab('meals')">🥗 Repas</button>
-        <button class="tab" onclick="switchTab('challenges')">⚡ Défis</button>
-        <button class="tab" onclick="switchTab('poop')">💩 Journal</button>
-        <button class="tab" onclick="switchTab('goals')">🎯 Objectifs</button>
+        <button class="tab active" onclick="scrollToSection('meals-section')">🥗 Repas</button>
+        <button class="tab" onclick="scrollToSection('challenges-section')">⚡ Défis</button>
+        <button class="tab" onclick="scrollToSection('poop-section')">💩 Journal</button>
+        <button class="tab" onclick="scrollToSection('goals-section')">🎯 Objectifs</button>
       </div>
 
-      <!-- Sections dynamiques (masquées par défaut) -->
-      <div id="meals-section" class="tab-section active">
+      <!-- Sections (toujours visibles) -->
+      <div id="meals-section" class="tab-section">
+        <div class="section-row">
+          <span class="section-title">Derniers repas</span>
+          <a href="repas.html" class="section-link">Voir tout →</a>
+        </div>
         <div id="meals-content"></div>
       </div>
+
       <div id="challenges-section" class="tab-section">
+        <div class="section-row">
+          <span class="section-title">Défis en cours</span>
+          <a href="sport.html" class="section-link">Voir tout →</a>
+        </div>
         <div id="challenges-content"></div>
       </div>
+
       <div id="poop-section" class="tab-section">
+        <div class="section-row">
+          <span class="section-title">Derniers passages</span>
+          <a href="caca.html" class="section-link">Voir tout →</a>
+        </div>
         <div id="poop-content"></div>
       </div>
+
       <div id="goals-section" class="tab-section">
+        <div class="section-row">
+          <span class="section-title">Objectifs 🎯</span>
+          <a href="objectifs.html" class="section-link">Voir tout →</a>
+        </div>
         <div id="goals-content"></div>
       </div>
     </div>
@@ -281,19 +301,17 @@
       "mauvais": "b-coral"
     };
 
-    // Fonction pour basculer entre les onglets
-    function switchTab(tabName) {
-      // Masquer toutes les sections
-      document.querySelectorAll('.tab-section').forEach(section => {
-        section.classList.remove('active');
-      });
-      // Désactiver tous les onglets
+    // Fonction pour faire défiler vers une section
+    function scrollToSection(sectionId) {
+      const section = document.getElementById(sectionId);
+      if (section) {
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
+      // Mettre à jour l'onglet actif
       document.querySelectorAll('.tab').forEach(tab => {
         tab.classList.remove('active');
       });
-
-      // Activer l'onglet et la section sélectionnés
-      document.getElementById(`${tabName}-section`).classList.add('active');
       event.target.classList.add('active');
     }
 
@@ -418,8 +436,8 @@
         container.innerHTML = `
           <div class="empty">
             <div class="empty-i">🎯</div>
-            <p style="font-weight:600;color:var(--text);font-size:16px">Aucun objectif</p>
-            <p style="font-size:13px;margin-top:6px;line-height:1.5">Créez un objectif pour commencer.</p>
+            <p style="font-weight:600;color:var(--text);font-size:16px">Aucun objectif actif</p>
+            <p style="font-size:13px;margin-top:6px;line-height:1.5">Fixez-vous des objectifs ensemble !</p>
           </div>
         `;
         return;
