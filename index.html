@@ -11,6 +11,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="config.js"></script>
   <style>
+    /* Styles existants (gardés) */
     .quick-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -63,7 +64,6 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 10px;
-      cursor: pointer;
     }
     .section-title {
       font-size: 14px;
@@ -74,6 +74,45 @@
       font-size: 12px;
       color: var(--purple);
       text-decoration: none;
+      cursor: pointer;
+    }
+
+    /* Nouveaux styles pour les onglets */
+    .tabs {
+      display: flex;
+      background: var(--surface2);
+      border-radius: var(--rad-sm);
+      padding: 4px;
+      margin-bottom: 16px;
+      border: 1px solid var(--border);
+    }
+    .tab {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      background: transparent;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all .2s ease;
+      text-align: center;
+    }
+    .tab.active {
+      background: var(--surface);
+      color: var(--purple);
+      font-weight: 600;
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Style pour les sections masquées */
+    .tab-section {
+      display: none;
+    }
+    .tab-section.active {
+      display: block;
+      animation: slideUp .3s ease both;
     }
 
     /* Streak Card */
@@ -160,31 +199,48 @@
 
       <!-- Quick Stats Grid -->
       <div class="quick-grid">
-        <div class="qcard repas" onclick="window.location.href='repas.html'">
+        <div class="qcard repas" onclick="switchTab('meals')">
           <span class="qcard-emoji">🥗</span>
           <div class="qcard-val" id="meal-count">0</div>
           <div class="qcard-label">Repas</div>
         </div>
-        <div class="qcard defis" onclick="window.location.href='sport.html'">
+        <div class="qcard defis" onclick="switchTab('challenges')">
           <span class="qcard-emoji">⚡</span>
           <div class="qcard-val" id="challenge-count">0/0</div>
           <div class="qcard-label">Défis</div>
         </div>
-        <div class="qcard passages" onclick="window.location.href='caca.html'">
+        <div class="qcard passages" onclick="switchTab('poop')">
           <span class="qcard-emoji">💩</span>
           <div class="qcard-val" id="poop-count">0</div>
           <div class="qcard-label">Passages</div>
         </div>
-        <div class="qcard objectifs" onclick="window.location.href='objectifs.html'">
+        <div class="qcard objectifs" onclick="switchTab('goals')">
           <span class="qcard-emoji">🎯</span>
           <div class="qcard-val" id="goal-percent">0%</div>
           <div class="qcard-label">Objectifs</div>
         </div>
       </div>
 
-      <!-- Dynamic Sections (will be populated by JS) -->
-      <div id="dynamic-sections">
-        <!-- Sections will be inserted here by renderDashboard() -->
+      <!-- Onglets -->
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('meals')">🥗 Repas</button>
+        <button class="tab" onclick="switchTab('challenges')">⚡ Défis</button>
+        <button class="tab" onclick="switchTab('poop')">💩 Journal</button>
+        <button class="tab" onclick="switchTab('goals')">🎯 Objectifs</button>
+      </div>
+
+      <!-- Sections dynamiques (masquées par défaut) -->
+      <div id="meals-section" class="tab-section active">
+        <div id="meals-content"></div>
+      </div>
+      <div id="challenges-section" class="tab-section">
+        <div id="challenges-content"></div>
+      </div>
+      <div id="poop-section" class="tab-section">
+        <div id="poop-content"></div>
+      </div>
+      <div id="goals-section" class="tab-section">
+        <div id="goals-content"></div>
       </div>
     </div>
 
@@ -225,6 +281,22 @@
       "mauvais": "b-coral"
     };
 
+    // Fonction pour basculer entre les onglets
+    function switchTab(tabName) {
+      // Masquer toutes les sections
+      document.querySelectorAll('.tab-section').forEach(section => {
+        section.classList.remove('active');
+      });
+      // Désactiver tous les onglets
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+
+      // Activer l'onglet et la section sélectionnés
+      document.getElementById(`${tabName}-section`).classList.add('active');
+      event.target.classList.add('active');
+    }
+
     // Fonction pour récupérer le profil
     async function getProfile(userId) {
       const { data } = await db.from('profiles').select('*').eq('id', userId).single();
@@ -252,99 +324,120 @@
       return s;
     }
 
-    // Fonction pour afficher le dashboard
-    function renderDashboard(profile, partner, couple, meals, challenges, poop, streak) {
-      // Mettre à jour le nom de l'utilisateur
-      document.getElementById('user-name').textContent = profile.name || "Nico";
-
-      // Mettre à jour le streak
-      document.getElementById('streak-days').textContent = streak.current_streak;
-      document.getElementById('best-streak').textContent = streak.best_streak;
-
-      // Mettre à jour les quick stats
-      document.getElementById('meal-count').textContent = meals.length;
-      document.getElementById('challenge-count').textContent = `${challenges.filter(c => c.completed).length}/${challenges.length}`;
-      document.getElementById('poop-count').textContent = poop.length;
-      document.getElementById('goal-percent').textContent = `${Math.round((challenges.filter(c => c.completed).length / challenges.length) * 100)}%`;
-
-      // Rendre les sections dynamiques
-      const dynamicSections = document.getElementById('dynamic-sections');
-      dynamicSections.innerHTML = '';
-
-      // Section Repas
-      if (meals.length > 0) {
-        dynamicSections.innerHTML += `
-          <div class="section-row meal-section" onclick="window.location.href='repas.html'">
-            <span class="section-title">Derniers repas</span>
-            <a href="repas.html" class="section-link">Voir tout →</a>
-          </div>
-          <div class="card">
-            ${meals.map(m => `
-              <div class="row-item">
-                <div class="av ${m.user_id === profile.id ? 'av-a' : 'av-b'}" style="font-size:10px">${m.profiles?.name?.[0]||'?'}</div>
-                <div style="flex:1">
-                  <div style="font-size:13px;font-weight:500">${m.name}</div>
-                  <div style="font-size:11px;color:var(--muted)">${new Date(m.date).toLocaleDateString('fr-FR')}</div>
-                </div>
-                <span class="badge b-purple">${m.type}</span>
-              </div>
-            `).join('')}
+    // Fonction pour afficher les repas
+    function renderMeals(meals, profile) {
+      const container = document.getElementById('meals-content');
+      if (meals.length === 0) {
+        container.innerHTML = `
+          <div class="empty">
+            <div class="empty-i">🍽️</div>
+            <p style="font-weight:600;color:var(--text);font-size:16px">Aucun repas</p>
+            <p style="font-size:13px;margin-top:6px;line-height:1.5">Ajoutez un repas pour commencer.</p>
           </div>
         `;
+        return;
       }
-
-      // Section Défis
-      if (challenges.length > 0) {
-        dynamicSections.innerHTML += `
-          <div class="section-row challenge-section" onclick="window.location.href='sport.html'">
-            <span class="section-title">Défis en cours</span>
-            <a href="sport.html" class="section-link">Voir tout →</a>
-          </div>
-          <div class="card">
-            ${challenges.map(c => `
-              <div class="row-item">
-                <div class="av ${c.user_id === profile.id ? 'av-a' : 'av-b'}" style="font-size:10px">${c.profiles?.name?.[0]||'?'}</div>
-                <div style="flex:1">
-                  <div style="font-size:13px;font-weight:500">${c.name}</div>
-                  <div style="font-size:11px;color:var(--muted)">${c.completed ? '✅ Terminé' : '⏳ En cours'}</div>
-                </div>
-                <span class="badge ${c.completed ? 'b-green' : 'b-gray'}">${c.completed ? 'Terminé' : 'En attente'}</span>
-              </div>
-            `).join('')}
-          </div>
-        `;
-      }
-
-      // Section Passages
-      if (poop.length > 0) {
-        dynamicSections.innerHTML += `
-          <div class="section-row poop-section" onclick="window.location.href='caca.html'">
-            <span class="section-title">Dernier passage</span>
-            <a href="caca.html" class="section-link">Journal →</a>
-          </div>
-          <div class="card">
+      container.innerHTML = `
+        <div class="card">
+          ${meals.map(m => `
             <div class="row-item">
-              <div class="av ${poop[0].user_id === profile.id ? 'av-a' : 'av-b'}" style="font-size:10px">${poop[0].profiles?.name?.[0]||'?'}</div>
+              <div class="av ${m.user_id === profile.id ? 'av-a' : 'av-b'}" style="font-size:10px">${m.profiles?.name?.[0]||'?'}</div>
               <div style="flex:1">
-                <div style="font-size:13px;font-weight:500">${BRISTOL_EMOJI[poop[0].bristol_type]} Type ${poop[0].bristol_type}</div>
-                <div style="font-size:11px;color:var(--muted)">${new Date(poop[0].logged_at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</div>
+                <div style="font-size:13px;font-weight:500">${m.name}</div>
+                <div style="font-size:11px;color:var(--muted)">${new Date(m.date).toLocaleDateString('fr-FR')}</div>
               </div>
-              <span class="badge ${SCORE_BADGE[poop[0].score]||'b-gray'}">${poop[0].score}</span>
+              <span class="badge b-purple">${m.type}</span>
             </div>
-          </div>
-        `;
-      }
+          `).join('')}
+        </div>
+      `;
+    }
 
-      // Message si aucune donnée
-      if (meals.length === 0 && challenges.length === 0 && poop.length === 0) {
-        dynamicSections.innerHTML += `
-          <div class="empty" style="margin-top:20px;animation:slideUp .5s .3s ease both">
-            <div class="empty-i">🚀</div>
-            <p style="font-weight:600;color:var(--text);font-size:16px">Commencez votre journée !</p>
-            <p style="font-size:13px;margin-top:6px;line-height:1.5">Ajoutez un repas ou créez<br>un défi sport ensemble</p>
+    // Fonction pour afficher les défis
+    function renderChallenges(challenges, profile) {
+      const container = document.getElementById('challenges-content');
+      if (challenges.length === 0) {
+        container.innerHTML = `
+          <div class="empty">
+            <div class="empty-i">⚡</div>
+            <p style="font-weight:600;color:var(--text);font-size:16px">Aucun défi</p>
+            <p style="font-size:13px;margin-top:6px;line-height:1.5">Créez un défi pour commencer.</p>
           </div>
         `;
+        return;
       }
+      container.innerHTML = `
+        <div class="card">
+          ${challenges.map(c => `
+            <div class="row-item">
+              <div class="av ${c.user_id === profile.id ? 'av-a' : 'av-b'}" style="font-size:10px">${c.profiles?.name?.[0]||'?'}</div>
+              <div style="flex:1">
+                <div style="font-size:13px;font-weight:500">${c.name}</div>
+                <div style="font-size:11px;color:var(--muted)">${c.completed ? '✅ Terminé' : '⏳ En cours'}</div>
+              </div>
+              <span class="badge ${c.completed ? 'b-green' : 'b-gray'}">${c.completed ? 'Terminé' : 'En attente'}</span>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    // Fonction pour afficher les passages
+    function renderPoop(poop, profile) {
+      const container = document.getElementById('poop-content');
+      if (poop.length === 0) {
+        container.innerHTML = `
+          <div class="empty">
+            <div class="empty-i">💩</div>
+            <p style="font-weight:600;color:var(--text);font-size:16px">Aucun passage</p>
+            <p style="font-size:13px;margin-top:6px;line-height:1.5">Ajoutez un passage pour commencer.</p>
+          </div>
+        `;
+        return;
+      }
+      container.innerHTML = `
+        <div class="card">
+          ${poop.map(p => `
+            <div class="row-item">
+              <div class="av ${p.user_id === profile.id ? 'av-a' : 'av-b'}" style="font-size:10px">${p.profiles?.name?.[0]||'?'}</div>
+              <div style="flex:1">
+                <div style="font-size:13px;font-weight:500">${BRISTOL_EMOJI[p.bristol_type]} Type ${p.bristol_type}</div>
+                <div style="font-size:11px;color:var(--muted)">${new Date(p.logged_at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</div>
+              </div>
+              <span class="badge ${SCORE_BADGE[p.score]||'b-gray'}">${p.score}</span>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    // Fonction pour afficher les objectifs
+    function renderGoals(challenges, profile) {
+      const container = document.getElementById('goals-content');
+      if (challenges.length === 0) {
+        container.innerHTML = `
+          <div class="empty">
+            <div class="empty-i">🎯</div>
+            <p style="font-weight:600;color:var(--text);font-size:16px">Aucun objectif</p>
+            <p style="font-size:13px;margin-top:6px;line-height:1.5">Créez un objectif pour commencer.</p>
+          </div>
+        `;
+        return;
+      }
+      container.innerHTML = `
+        <div class="card">
+          ${challenges.map(c => `
+            <div class="row-item">
+              <div class="av ${c.user_id === profile.id ? 'av-a' : 'av-b'}" style="font-size:10px">${c.profiles?.name?.[0]||'?'}</div>
+              <div style="flex:1">
+                <div style="font-size:13px;font-weight:500">${c.name}</div>
+                <div style="font-size:11px;color:var(--muted)">Progrès: ${c.completed ? '100%' : '0%'}</div>
+              </div>
+              <span class="badge ${c.completed ? 'b-green' : 'b-gray'}">${c.completed ? 'Atteint' : 'En cours'}</span>
+            </div>
+          `).join('')}
+        </div>
+      `;
     }
 
     // Fonction d'initialisation
@@ -360,14 +453,30 @@
 
         // Charger les données en parallèle
         const [meals, challenges, poop, streak] = await Promise.all([
-          db.from('meals').select('*, profiles(name)').eq('couple_id', couple.id).order('date', { ascending: false }).limit(3),
-          db.from('challenges').select('*, profiles(name)').eq('couple_id', couple.id).order('created_at', { ascending: false }).limit(3),
-          db.from('poop').select('*, profiles(name)').eq('couple_id', couple.id).order('logged_at', { ascending: false }).limit(1),
+          db.from('meals').select('*, profiles(name)').eq('couple_id', couple.id).order('date', { ascending: false }).limit(10),
+          db.from('challenges').select('*, profiles(name)').eq('couple_id', couple.id).order('created_at', { ascending: false }).limit(10),
+          db.from('poop').select('*, profiles(name)').eq('couple_id', couple.id).order('logged_at', { ascending: false }).limit(10),
           getOrCreateStreak(couple.id)
         ]);
 
-        // Afficher les données
-        renderDashboard(profile, partner, couple, meals, challenges, poop, streak);
+        // Mettre à jour le nom de l'utilisateur
+        document.getElementById('user-name').textContent = profile.name || "Nico";
+
+        // Mettre à jour le streak
+        document.getElementById('streak-days').textContent = streak.current_streak;
+        document.getElementById('best-streak').textContent = streak.best_streak;
+
+        // Mettre à jour les quick stats
+        document.getElementById('meal-count').textContent = meals.length;
+        document.getElementById('challenge-count').textContent = `${challenges.filter(c => c.completed).length}/${challenges.length}`;
+        document.getElementById('poop-count').textContent = poop.length;
+        document.getElementById('goal-percent').textContent = `${Math.round((challenges.filter(c => c.completed).length / challenges.length) * 100)}%`;
+
+        // Rendre les sections
+        renderMeals(meals, profile);
+        renderChallenges(challenges, profile);
+        renderPoop(poop, profile);
+        renderGoals(challenges, profile);
 
       } catch (error) {
         console.error("Erreur lors du chargement des données :", error);
