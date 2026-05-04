@@ -23,37 +23,110 @@
   <a href="objectifs.html"><span class="ni">🎯</span><span class="nl">Objectifs</span></a>
 </nav>
 
-<!-- Modal -->
+<!-- Modal ajouter/modifier -->
 <div class="overlay" id="modal" onclick="closeModal(event)">
   <div class="modal">
     <div class="mhandle"></div>
-    <div class="mtitle">Ajouter un repas</div>
-    <form onsubmit="addMeal(event)">
-      <div class="ig">
-        <label>Type de repas</label>
-        <select class="inp" id="m-type">
-          <option value="petit_dej">🌅 Petit-déj</option>
-          <option value="dejeuner" selected>☀️ Déjeuner</option>
-          <option value="diner">🌙 Dîner</option>
-          <option value="snack">⚡ Snack</option>
-        </select>
-      </div>
-      <div class="ig"><label>Qu'est-ce que tu as mangé ?</label><input class="inp" id="m-name" placeholder="Salade césar, sushi, pizza..." required></div>
-      <div class="ig" style="margin-bottom:20px"><label>Notes (optionnel)</label><input class="inp" id="m-notes" placeholder="Fait maison, resto..."></div>
-      <button class="btn btn-p" type="submit" id="m-btn">Ajouter 🍽️</button>
-      <button class="btn btn-g" type="button" style="margin-top:8px" onclick="document.getElementById('modal').classList.remove('open')">Annuler</button>
-    </form>
+    <div class="mtitle" id="modal-title">Ajouter un repas</div>
+    <div class="ig">
+      <label>Type de repas</label>
+      <select class="inp" id="m-type">
+        <option value="petit_dej">🌅 Petit-déj</option>
+        <option value="dejeuner" selected>☀️ Déjeuner</option>
+        <option value="diner">🌙 Dîner</option>
+        <option value="snack">⚡ Snack</option>
+      </select>
+    </div>
+    <div class="ig"><label>Qu'est-ce que tu as mangé ?</label><input class="inp" id="m-name" placeholder="Salade césar, sushi, pizza..."></div>
+    <div class="ig" style="margin-bottom:20px"><label>Notes (optionnel)</label><input class="inp" id="m-notes" placeholder="Fait maison, resto..."></div>
+    <button class="btn btn-p" id="m-btn" onclick="saveMeal()">Ajouter 🍽️</button>
+    <button class="btn btn-g" style="margin-top:8px" onclick="document.getElementById('modal').classList.remove('open')">Annuler</button>
   </div>
 </div>
 
 <script>
 let profile, selDate = new Date().toISOString().split('T')[0]
 let viewYear = new Date().getFullYear(), viewMonth = new Date().getMonth() + 1
-let daysWithData = []
+let daysWithData = [], editingId = null
 
 const DAYS = ['L','M','M','J','V','S','D']
 
-function closeModal(e) { if (e.target === document.getElementById('modal')) document.getElementById('modal').classList.remove('open') }
+async function init() {
+  const { data: { session } } = await db.auth.getSession()
+  if (!session) { window.location.replace('login.html'); return }
+  const { data: p } = await db.from('profiles').select('*').eq('id', session.user.id).single()
+  if (!p) { await db.auth.signOut(); window.location.replace('login.html'); return }
+  profile = p
+  await loadDaysWithData()
+  buildCal(viewYear, viewMonth)
+  await loadMeals()
+}
+
+function closeModal(e) {
+  if (e.target === document.getElementById('modal')) {
+    document.getElementById('modal').classList.remove('open')
+    editingId = null
+  }
+}
+
+function openAddModal() {
+  editingId = null
+  document.getElementById('modal-title').textContent = 'Ajouter un repas'
+  document.getElementById('m-name').value = ''
+  document.getElementById('m-notes').value = ''
+  document.getElementById('m-type').value = 'dejeuner'
+  document.getElementById('m-btn').textContent = 'Ajouter 🍽️'
+  document.getElementById('modal').classList.add('open')
+}
+
+function openEditModal(id, type, name, notes) {
+  editingId = id
+  document.getElementById('modal-title').textContent = 'Modifier le repas'
+  document.getElementById('m-type').value = type
+  document.getElementById('m-name').value = name
+  document.getElementById('m-notes').value = notes || ''
+  document.getElementById('m-btn').textContent = 'Enregistrer ✏️'
+  document.getElementById('modal').classList.add('open')
+}
+
+async function saveMeal() {
+  const name = document.getElementById('m-name').value.trim()
+  if (!name) { alert('Indique ce que tu as mangé !'); return }
+  const btn = document.getElementById('m-btn')
+  btn.disabled = true; btn.textContent = '...'
+
+  const payload = {
+    meal_type: document.getElementById('m-type').value,
+    name,
+    notes: document.getElementById('m-notes').value || null
+  }
+
+  let error
+  if (editingId) {
+    ({ error } = await db.from('meals').update(payload).eq('id', editingId))
+  } else {
+    ({ error } = await db.from('meals').insert({
+      ...payload, user_id: profile.id, couple_id: profile.couple_id, date: selDate
+    }))
+  }
+
+  if (error) { alert('Erreur : ' + error.message); btn.disabled = false; btn.textContent = editingId ? 'Enregistrer ✏️' : 'Ajouter 🍽️'; return }
+
+  document.getElementById('modal').classList.remove('open')
+  editingId = null
+  btn.disabled = false
+  await loadDaysWithData()
+  buildCal(viewYear, viewMonth)
+  await loadMeals()
+}
+
+async function deleteMeal(id) {
+  if (!confirm('Supprimer ce repas ?')) return
+  await db.from('meals').delete().eq('id', id)
+  await loadDaysWithData()
+  buildCal(viewYear, viewMonth)
+  await loadMeals()
+}
 
 function buildCal(year, month) {
   const first = new Date(year, month-1, 1)
@@ -65,7 +138,7 @@ function buildCal(year, month) {
   let html = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
     <button onclick="changeMonth(-1)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:4px 10px">‹</button>
     <span style="font-size:14px;font-weight:500;text-transform:capitalize">${mLabel}</span>
-    <button onclick="changeMonth(1)"  style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:4px 10px">›</button>
+    <button onclick="changeMonth(1)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;padding:4px 10px">›</button>
   </div>
   <div class="card" style="padding:12px"><div class="cal-grid">
     ${DAYS.map(d => `<div class="cal-dh">${d}</div>`).join('')}`
@@ -73,8 +146,7 @@ function buildCal(year, month) {
   for (let i = 0; i < start; i++) html += '<div></div>'
   for (let d = 1; d <= last.getDate(); d++) {
     const iso = `${year}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`
-    const isToday = iso === today
-    const isSel = iso === selDate
+    const isToday = iso === today, isSel = iso === selDate
     const has = daysWithData.includes(iso)
     html += `<div class="cal-d ${isToday?'today':''} ${isSel&&!isToday?'sel':''} ${has?'has':''}" onclick="selectDay('${iso}')">${d}</div>`
   }
@@ -82,11 +154,7 @@ function buildCal(year, month) {
   document.getElementById('cal-section').innerHTML = html
 }
 
-async function selectDay(iso) {
-  selDate = iso
-  buildCal(viewYear, viewMonth)
-  await loadMeals()
-}
+async function selectDay(iso) { selDate = iso; buildCal(viewYear, viewMonth); await loadMeals() }
 
 async function changeMonth(dir) {
   viewMonth += dir
@@ -111,24 +179,32 @@ async function loadMeals() {
 
   let html = `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0 12px">
     <div class="slabel" style="padding:0;text-transform:capitalize">${selLabel}</div>
-    <button class="btn btn-p" style="width:auto;padding:7px 14px;font-size:12px" onclick="document.getElementById('modal').classList.add('open')">+ Ajouter</button>
+    <button class="btn btn-p" style="width:auto;padding:7px 14px;font-size:12px" onclick="openAddModal()">+ Ajouter</button>
   </div>`
 
-  Object.entries(MEAL_LABELS).forEach(([type, label]) => {
+  const types = { petit_dej:'🌅 Petit-déj', dejeuner:'☀️ Déjeuner', diner:'🌙 Dîner', snack:'⚡ Snack' }
+  Object.entries(types).forEach(([type, label]) => {
     const items = byType[type] || []
     html += `<div class="card">
-      <div class="card-hdr"><span class="card-title">${label}</span>
+      <div class="card-hdr">
+        <span class="card-title">${label}</span>
         <span class="badge ${items.length?'b-green':'b-gray'}">${items.length?'RENSEIGNÉ':'VIDE'}</span>
       </div>
       ${items.length === 0
-        ? '<div style="font-size:12px;color:var(--dim);text-align:center;padding:6px 0">Rien encore</div>'
-        : items.map(m => `<div class="row-item">
+        ? '<div style="font-size:12px;color:var(--dim);text-align:center;padding:6px 0">Rien encore — appuie sur + Ajouter</div>'
+        : items.map(m => `
+          <div class="row-item">
             <div class="udot ${m.user_id===profile.id?'dot-a':'dot-n'}"></div>
             <div style="flex:1">
               <div style="font-size:13px">${m.name}</div>
               <div style="font-size:11px;color:var(--muted)">${m.profiles?.name||''}${m.notes?' · '+m.notes:''}</div>
             </div>
-            ${m.user_id===profile.id ? `<button onclick="deleteMeal('${m.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0 4px">✕</button>` : ''}
+            ${m.user_id===profile.id ? `
+              <button onclick="openEditModal('${m.id}','${m.meal_type}',${JSON.stringify(m.name)},${JSON.stringify(m.notes||'')})"
+                style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;padding:0 6px">✏️</button>
+              <button onclick="deleteMeal('${m.id}')"
+                style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;padding:0 4px">🗑️</button>
+            ` : ''}
           </div>`).join('')
       }
     </div>`
@@ -137,43 +213,6 @@ async function loadMeals() {
   document.getElementById('meals-section').innerHTML = html
 }
 
-async function addMeal(e) {
-  e.preventDefault()
-  const btn = document.getElementById('m-btn')
-  btn.textContent = '...'
-  await db.from('meals').insert({
-    user_id: profile.id, couple_id: profile.couple_id,
-    date: selDate,
-    meal_type: document.getElementById('m-type').value,
-    name: document.getElementById('m-name').value,
-    notes: document.getElementById('m-notes').value || null
-  })
-  document.getElementById('m-name').value = ''
-  document.getElementById('m-notes').value = ''
-  document.getElementById('modal').classList.remove('open')
-  btn.textContent = 'Ajouter 🍽️'
-  await loadDaysWithData()
-  buildCal(viewYear, viewMonth)
-  await loadMeals()
-}
-
-async function deleteMeal(id) {
-  await db.from('meals').delete().eq('id', id)
-  await loadDaysWithData()
-  buildCal(viewYear, viewMonth)
-  await loadMeals()
-}
-
-async function init() {
-  const { data: { session } } = await db.auth.getSession()
-  if (!session) { window.location.replace('login.html'); return }
-  const { data: p } = await db.from('profiles').select('*').eq('id', session.user.id).single()
-  if (!p) { await db.auth.signOut(); window.location.replace('login.html'); return }
-  profile = p
-  await loadDaysWithData()
-  buildCal(viewYear, viewMonth)
-  await loadMeals()
-}
 init()
 </script>
 </body>

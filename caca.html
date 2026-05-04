@@ -12,11 +12,10 @@
 <div class="app">
   <div class="hdr"><h1>Journal 💩</h1><p>Santé intestinale du couple</p></div>
   <div class="page">
+    <div id="date-scroll" class="datescroll"></div>
     <div id="stats-section"></div>
-    <button class="btn btn-p" style="margin-bottom:16px" onclick="document.getElementById('modal').classList.add('open')">+ Enregistrer un passage</button>
-    <div id="today-section"></div>
-    <div id="history-section"></div>
-    <div id="tip-section"></div>
+    <button class="btn btn-p" style="margin-bottom:16px" onclick="openAddModal()">+ Enregistrer un passage</button>
+    <div id="logs-section"></div>
   </div>
 </div>
 
@@ -32,29 +31,54 @@
 <div class="overlay" id="modal" onclick="closeModal(event)">
   <div class="modal">
     <div class="mhandle"></div>
-    <div class="mtitle">Enregistrer un passage 💩</div>
+    <div class="mtitle" id="modal-title">Enregistrer un passage 💩</div>
 
     <div class="ig">
-      <label>Choisir le type (Échelle de Bristol)</label>
+      <label>Type (Échelle de Bristol)</label>
       <div id="bristol-picker" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:8px"></div>
-      <div id="bristol-info" class="card" style="padding:10px 12px;margin-bottom:0"></div>
+      <div id="bristol-info" class="card" style="padding:10px 12px"></div>
     </div>
     <div class="ig" style="margin-top:12px;margin-bottom:20px">
       <label>Notes (optionnel)</label>
       <input class="inp" id="p-notes" placeholder="Après-café, post-sport...">
     </div>
-    <button class="btn btn-p" onclick="addLog()" id="p-btn">Enregistrer 💾</button>
+    <button class="btn btn-p" id="p-btn" onclick="saveLog()">Enregistrer 💾</button>
     <button class="btn btn-g" style="margin-top:8px" onclick="document.getElementById('modal').classList.remove('open')">Annuler</button>
   </div>
 </div>
 
 <script>
-let profile, partner, selectedType = 4
+let profile, partner, selectedType = 4, editingId = null
+let selDate = new Date().toISOString().split('T')[0]
 const today = new Date().toISOString().split('T')[0]
-const SCORE_BADGE = {'A+':'b-green','A':'b-teal','B':'b-amber','C':'b-coral','D':'b-coral'}
-const SCORE_COLOR = {'A+':'var(--anna)','A':'var(--green)','B':'var(--amber)','C':'var(--coral)','D':'var(--coral)'}
 
-function closeModal(e) { if(e.target===document.getElementById('modal')) document.getElementById('modal').classList.remove('open') }
+const BRISTOL_EMOJI  = { 1:'🪨', 2:'🫘', 3:'🌽', 4:'🍌', 5:'🥕', 6:'💦', 7:'🌊' }
+const BRISTOL_SCORE  = { 1:'C', 2:'B', 3:'A', 4:'A+', 5:'A', 6:'B', 7:'D' }
+const BRISTOL_DESC   = { 1:'Dure, séparée — boire plus !', 2:'Boudinée — un peu dure', 3:'Craquelée — presque parfait', 4:'Banane lisse — PARFAIT 🏆', 5:'Morceaux mous — ok', 6:'Mou, étalé — surveille', 7:'Liquide — attention !' }
+const BRISTOL_LABELS = { 1:'Dure, séparée', 2:'Boudinée, grumelée', 3:'Craquelée', 4:'Banane lisse', 5:'Morceaux doux', 6:'Mou, étalé', 7:'Liquide' }
+const SCORE_BADGE    = { 'A+':'b-green', 'A':'b-teal', 'B':'b-amber', 'C':'b-coral', 'D':'b-coral' }
+
+function closeModal(e) {
+  if (e.target === document.getElementById('modal')) {
+    document.getElementById('modal').classList.remove('open')
+    editingId = null
+  }
+}
+
+function buildDateScroll() {
+  const html = [-3,-2,-1,0,1,2].map(off => {
+    const d = new Date(Date.now() + off*86400000)
+    const iso = d.toISOString().split('T')[0]
+    const isT = iso === today, isSel = iso === selDate
+    return `<button class="dchip ${isSel?'sel':''} ${isT&&!isSel?'today-chip':''}" onclick="changeDay('${iso}')">
+      <div class="dday">${d.toLocaleDateString('fr-FR',{weekday:'short'})}</div>
+      <div class="dnum">${d.getDate()}</div>
+    </button>`
+  }).join('')
+  document.getElementById('date-scroll').innerHTML = html
+}
+
+async function changeDay(iso) { selDate = iso; buildDateScroll(); await loadLogs() }
 
 function buildBristolPicker() {
   document.getElementById('bristol-picker').innerHTML = [1,2,3,4,5,6,7].map(t => `
@@ -79,35 +103,68 @@ function selectType(t) {
 function updateBristolInfo() {
   const score = BRISTOL_SCORE[selectedType]
   document.getElementById('bristol-info').innerHTML = `
-    <div style="font-size:13px;font-weight:500;margin-bottom:3px">${BRISTOL_EMOJI[selectedType]} Type ${selectedType} — ${BRISTOL_LABELS?.[selectedType]||''}</div>
+    <div style="font-size:13px;font-weight:500;margin-bottom:3px">${BRISTOL_EMOJI[selectedType]} Type ${selectedType} — ${BRISTOL_LABELS[selectedType]}</div>
     <div style="font-size:11px;color:var(--muted);margin-bottom:8px">${BRISTOL_DESC[selectedType]}</div>
     <span class="badge ${SCORE_BADGE[score]}">Score : ${score}</span>`
 }
 
-// We need BRISTOL_LABELS too
-const BRISTOL_LABELS = {1:'Dure, séparée',2:'Boudinée, grumelée',3:'Craquelée',4:'Banane lisse',5:'Morceaux doux',6:'Mou, étalé',7:'Liquide'}
+function openAddModal() {
+  editingId = null
+  selectedType = 4
+  document.getElementById('modal-title').textContent = 'Enregistrer un passage 💩'
+  document.getElementById('p-notes').value = ''
+  document.getElementById('p-btn').textContent = 'Enregistrer 💾'
+  buildBristolPicker()
+  document.getElementById('modal').classList.add('open')
+}
 
-async function addLog() {
+function openEditModal(id, bristolType, notes) {
+  editingId = id
+  selectedType = bristolType
+  document.getElementById('modal-title').textContent = 'Modifier le passage'
+  document.getElementById('p-notes').value = notes || ''
+  document.getElementById('p-btn').textContent = 'Mettre à jour ✏️'
+  buildBristolPicker()
+  document.getElementById('modal').classList.add('open')
+}
+
+async function saveLog() {
   const btn = document.getElementById('p-btn')
-  btn.disabled = true
-  btn.textContent = '...'
+  btn.disabled = true; btn.textContent = '...'
   const score = BRISTOL_SCORE[selectedType]
-  const { error } = await db.from('poop_logs').insert({
-    user_id: profile.id, couple_id: profile.couple_id,
-    bristol_type: selectedType,
-    notes: document.getElementById('p-notes').value || null,
-    score
-  })
+  const notes = document.getElementById('p-notes').value || null
+
+  let error
+  if (editingId) {
+    ({ error } = await db.from('poop_logs').update({ bristol_type: selectedType, notes, score }).eq('id', editingId))
+  } else {
+    // Build logged_at with selDate at current time
+    const now = new Date()
+    const logged_at = selDate === today
+      ? now.toISOString()
+      : selDate + 'T12:00:00.000Z'
+    ;({ error } = await db.from('poop_logs').insert({
+      user_id: profile.id, couple_id: profile.couple_id,
+      bristol_type: selectedType, notes, score, logged_at
+    }))
+  }
+
   if (error) {
     alert('Erreur : ' + error.message)
     btn.disabled = false
-    btn.textContent = 'Enregistrer 💾'
+    btn.textContent = editingId ? 'Mettre à jour ✏️' : 'Enregistrer 💾'
     return
   }
-  document.getElementById('p-notes').value = ''
+
   document.getElementById('modal').classList.remove('open')
+  editingId = null
   btn.disabled = false
-  btn.textContent = 'Enregistrer 💾'
+  await loadLogs()
+}
+
+async function deleteLog(id) {
+  if (!confirm('Supprimer ce passage ?')) return
+  await db.from('poop_logs').delete().eq('id', id)
   await loadLogs()
 }
 
@@ -116,13 +173,13 @@ async function loadLogs() {
     .select('*, profiles(name)')
     .eq('couple_id', profile.couple_id)
     .order('logged_at', { ascending: false })
-    .limit(20)
+    .limit(50)
 
   const all = logs || []
-  const todayLogs = all.filter(l => l.logged_at.startsWith(today))
-  const myLogs = all.filter(l => l.user_id === profile.id)
+  const dayLogs = all.filter(l => l.logged_at.startsWith(selDate))
+  const myLogs  = all.filter(l => l.user_id === profile.id)
 
-  // Compute champion
+  // Stats
   const scores = {}
   all.forEach(l => {
     if (!scores[l.user_id]) scores[l.user_id] = 0
@@ -131,70 +188,51 @@ async function loadLogs() {
   const myS = scores[profile.id] || 0
   const parS = partner ? (scores[partner.id] || 0) : 0
   const champion = myS > parS ? profile.name : parS > myS && partner ? partner.name : '='
-
-  const avgScore = myLogs.length ? (() => {
-    const order = ['A+','A','B','C','D']
-    const idx = Math.round(myLogs.reduce((s,l) => s + order.indexOf(l.score), 0) / myLogs.length)
-    return order[Math.min(4, Math.max(0, idx))]
-  })() : '-'
+  const avgOrder = ['A+','A','B','C','D']
+  const avgScore = myLogs.length
+    ? avgOrder[Math.min(4, Math.round(myLogs.reduce((s,l) => s + avgOrder.indexOf(l.score), 0) / myLogs.length))]
+    : '-'
 
   document.getElementById('stats-section').innerHTML = `
     <div class="stats" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px">
-      <div class="stat"><div class="stat-v" style="color:var(--amber)">${myLogs.length}</div><div class="stat-l">Total (${profile.name})</div></div>
-      <div class="stat"><div class="stat-v" style="color:${SCORE_COLOR[avgScore]||'var(--text)'}">${avgScore}</div><div class="stat-l">Score moyen</div></div>
+      <div class="stat"><div class="stat-v" style="color:var(--amber)">${myLogs.length}</div><div class="stat-l">Total</div></div>
+      <div class="stat"><div class="stat-v" style="color:var(--green)">${avgScore}</div><div class="stat-l">Score moyen</div></div>
       <div class="stat"><div class="stat-v" style="font-size:12px;color:var(--green)">${champion}</div><div class="stat-l">Champion 🏆</div></div>
     </div>`
 
-  // Today
-  document.getElementById('today-section').innerHTML = `
-    <div class="slabel">Aujourd'hui</div>
-    ${todayLogs.length === 0
-      ? '<div class="card" style="text-align:center;color:var(--muted);font-size:13px;padding:16px">Aucun passage enregistré aujourd\'hui</div>'
-      : `<div class="card">${todayLogs.map((l,i) => {
-          const time = new Date(l.logged_at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})
-          const isMe = l.user_id === profile.id
-          return `<div class="row-item" ${i===0?'style="padding-top:0"':''}>
-            <div class="av ${isMe?'av-a':'av-b'}" style="font-size:10px">${l.profiles?.name?.[0]||'?'}</div>
-            <div style="flex:1">
-              <div style="font-size:13px">${BRISTOL_EMOJI[l.bristol_type]} Type ${l.bristol_type} · ${time}</div>
-              <div style="font-size:11px;color:var(--muted)">${l.notes||BRISTOL_DESC[l.bristol_type]}</div>
-            </div>
-            <span class="badge ${SCORE_BADGE[l.score]||'b-gray'}">${l.score}</span>
-          </div>`
-        }).join('')}</div>`}
-  `
+  const dateLabel = new Date(selDate+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})
 
-  // History
-  const old = all.filter(l => !l.logged_at.startsWith(today)).slice(0, 10)
-  document.getElementById('history-section').innerHTML = old.length === 0 ? '' : `
-    <div class="slabel">Historique récent</div>
-    <div class="card">${old.map((l,i) => {
-      const dt = new Date(l.logged_at)
-      const dateStr = dt.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})
-      const time = dt.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})
-      const isMe = l.user_id === profile.id
-      return `<div class="row-item" ${i===0?'style="padding-top:0"':''}>
-        <div class="av ${isMe?'av-a':'av-b'}" style="font-size:10px">${l.profiles?.name?.[0]||'?'}</div>
-        <div style="flex:1">
-          <div style="font-size:12px">${BRISTOL_EMOJI[l.bristol_type]} Type ${l.bristol_type}</div>
-          <div style="font-size:11px;color:var(--muted)">${dateStr} à ${time}</div>
-        </div>
-        <span class="badge ${SCORE_BADGE[l.score]||'b-gray'}">${l.score}</span>
+  if (dayLogs.length === 0) {
+    document.getElementById('logs-section').innerHTML = `
+      <div class="slabel" style="text-transform:capitalize">${dateLabel}</div>
+      <div class="card" style="text-align:center;color:var(--muted);font-size:13px;padding:20px">
+        Aucun passage enregistré ce jour
       </div>`
-    }).join('')}</div>`
-
-  // Tip
-  const lastMine = myLogs[0]
-  if (lastMine && lastMine.bristol_type <= 2) {
-    document.getElementById('tip-section').innerHTML = `
-      <div class="card" style="border:.5px solid var(--green-dim);background:rgba(29,158,117,.05);margin-top:4px">
-        <div style="font-size:12px;color:var(--green-light);line-height:1.6">
-          💧 Conseil : Ton dernier passage était un peu dur. Essaie de boire plus d'eau et d'ajouter des fibres à tes repas !
-        </div>
-      </div>`
-  } else {
-    document.getElementById('tip-section').innerHTML = ''
+    return
   }
+
+  document.getElementById('logs-section').innerHTML = `
+    <div class="slabel" style="text-transform:capitalize">${dateLabel}</div>
+    <div class="card">
+      ${dayLogs.map((l,i) => {
+        const time = new Date(l.logged_at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})
+        const isMe = l.user_id === profile.id
+        return `<div class="row-item" ${i===0?'style="padding-top:0"':''}>
+          <div class="av ${isMe?'av-a':'av-b'}" style="font-size:10px">${l.profiles?.name?.[0]||'?'}</div>
+          <div style="flex:1">
+            <div style="font-size:13px">${BRISTOL_EMOJI[l.bristol_type]} Type ${l.bristol_type} · ${time}</div>
+            <div style="font-size:11px;color:var(--muted)">${l.notes||BRISTOL_DESC[l.bristol_type]}</div>
+          </div>
+          <span class="badge ${SCORE_BADGE[l.score]||'b-gray'}">${l.score}</span>
+          ${isMe ? `
+            <button onclick="openEditModal('${l.id}',${l.bristol_type},${JSON.stringify(l.notes||'')})"
+              style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;padding:0 4px;margin-left:4px">✏️</button>
+            <button onclick="deleteLog('${l.id}')"
+              style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;padding:0 4px">🗑️</button>
+          ` : ''}
+        </div>`
+      }).join('')}
+    </div>`
 }
 
 async function init() {
@@ -205,7 +243,7 @@ async function init() {
   profile = p
   const { data } = await db.from('profiles').select('*').eq('couple_id', profile.couple_id).neq('id', profile.id).maybeSingle()
   partner = data
-  buildBristolPicker()
+  buildDateScroll()
   await loadLogs()
 }
 init()
