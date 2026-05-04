@@ -205,12 +205,14 @@ async function addObjective(e) {
 }
 
 async function init() {
-  const auth = await requireAuth()
-  if (!auth) return
-  profile = auth.profile
+  const { data: { session } } = await db.auth.getSession()
+  if (!session) { window.location.replace('login.html'); return }
+  const { data: p } = await db.from('profiles').select('*').eq('id', session.user.id).single()
+  if (!p) { await db.auth.signOut(); window.location.replace('login.html'); return }
+  profile = p
 
   // Update shared label with partner name
-  const { data: partner } = await db.from('profiles').select('name').eq('couple_id', profile.couple_id).neq('id', profile.id).single()
+  const { data: partner } = await db.from('profiles').select('name').eq('couple_id', profile.couple_id).neq('id', profile.id).maybeSingle()
   if (partner) document.getElementById('shared-label').textContent = `Objectif commun avec ${partner.name}`
 
   document.getElementById('templates').innerHTML = TEMPLATES.map(t =>

@@ -89,16 +89,24 @@ const BRISTOL_LABELS = {1:'Dure, séparée',2:'Boudinée, grumelée',3:'Craquel�
 
 async function addLog() {
   const btn = document.getElementById('p-btn')
+  btn.disabled = true
   btn.textContent = '...'
   const score = BRISTOL_SCORE[selectedType]
-  await db.from('poop_logs').insert({
+  const { error } = await db.from('poop_logs').insert({
     user_id: profile.id, couple_id: profile.couple_id,
     bristol_type: selectedType,
     notes: document.getElementById('p-notes').value || null,
     score
   })
+  if (error) {
+    alert('Erreur : ' + error.message)
+    btn.disabled = false
+    btn.textContent = 'Enregistrer 💾'
+    return
+  }
   document.getElementById('p-notes').value = ''
   document.getElementById('modal').classList.remove('open')
+  btn.disabled = false
   btn.textContent = 'Enregistrer 💾'
   await loadLogs()
 }
@@ -190,10 +198,12 @@ async function loadLogs() {
 }
 
 async function init() {
-  const auth = await requireAuth()
-  if (!auth) return
-  profile = auth.profile
-  const { data } = await db.from('profiles').select('*').eq('couple_id', profile.couple_id).neq('id', profile.id).single()
+  const { data: { session } } = await db.auth.getSession()
+  if (!session) { window.location.replace('login.html'); return }
+  const { data: p } = await db.from('profiles').select('*').eq('id', session.user.id).single()
+  if (!p) { await db.auth.signOut(); window.location.replace('login.html'); return }
+  profile = p
+  const { data } = await db.from('profiles').select('*').eq('couple_id', profile.couple_id).neq('id', profile.id).maybeSingle()
   partner = data
   buildBristolPicker()
   await loadLogs()
