@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>FitCouple — Poids</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="config.js"></script>
+  <style>
+    .chart-wrap {
+      position: relative;
+      width: 100%;
+      height: 180px;
+      margin-top: 8px;
+    }
+    canvas#weightChart { width: 100% !important; height: 180px !important; }
+
+    .toggle-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .toggle-btn {
+      flex: 1;
+      padding: 8px;
+      border-radius: 10px;
+      border: 1.5px solid transparent;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      background: rgba(0,0,0,0.04);
+      color: var(--muted, #888);
+      transition: all .15s;
+    }
+    .toggle-btn.active-a { background: rgba(100,180,40,0.15); border-color: var(--anna,#639922); color: var(--anna,#639922); }
+    .toggle-btn.active-b { background: rgba(127,119,221,0.15); border-color: var(--nico,#7F77DD); color: var(--nico,#7F77DD); }
+
+    .weight-log-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-bottom: 0.5px solid rgba(0,0,0,0.05);
+    }
+    .weight-log-row:last-child { border-bottom: none; }
+    .weight-val { font-size: 18px; font-weight: 700; color: var(--text,#111); }
+    .weight-date { font-size: 11px; color: var(--muted,#888); }
+    .weight-diff-pos { font-size: 11px; color: var(--coral,#E24B4A); }
+    .weight-diff-neg { font-size: 11px; color: var(--green,#639922); }
+    .weight-diff-zero { font-size: 11px; color: var(--muted,#888); }
+
+    .stat-box {
+      background: var(--card,#fff);
+      border-radius: 14px;
+      border: 0.5px solid rgba(0,0,0,0.07);
+      padding: 12px;
+      text-align: center;
+    }
+    .stat-box-val { font-size: 20px; font-weight: 700; }
+    .stat-box-lbl { font-size: 10px; color: var(--muted,#888); margin-top: 2px; }
+
+    .range-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+    .range-tab {
+      padding: 5px 12px;
+      border-radius: 20px;
+      border: none;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      background: rgba(0,0,0,0.05);
+      color: var(--muted,#888);
+    }
+    .range-tab.sel { background: var(--primary,#7F77DD); color: #fff; }
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="hdr"><h1>Poids ⚖️</h1><p>Évolution du couple</p></div>
+  <div class="page" style="padding-bottom:90px;">
+
+    <!-- Toggle who -->
+    <div class="toggle-row" id="toggle-row">
+      <button class="toggle-btn active-a" id="btn-me" onclick="setView('me')">Moi</button>
+      <button class="toggle-btn" id="btn-partner" onclick="setView('partner')">Mon/Ma chéri(e)</button>
+      <button class="toggle-btn" id="btn-both" onclick="setView('both')">Les deux</button>
+    </div>
+
+    <!-- Stats row -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px" id="stats-row">
+      <div class="stat-box">
+        <div class="stat-box-val" id="stat-current">—</div>
+        <div class="stat-box-lbl">Actuel (kg)</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-box-val" id="stat-start">—</div>
+        <div class="stat-box-lbl">Début (kg)</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-box-val" id="stat-delta">—</div>
+        <div class="stat-box-lbl">Évolution</div>
+      </div>
+    </div>
+
+    <!-- Range tabs -->
+    <div class="range-tabs">
+      <button class="range-tab sel" onclick="setRange(7, this)">7j</button>
+      <button class="range-tab" onclick="setRange(30, this)">30j</button>
+      <button class="range-tab" onclick="setRange(90, this)">3m</button>
+      <button class="range-tab" onclick="setRange(365, this)">1an</button>
+    </div>
+
+    <!-- Chart -->
+    <div class="card" style="padding:14px;margin-bottom:14px">
+      <div class="chart-wrap">
+        <canvas id="weightChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Add button -->
+    <button class="btn btn-p" style="margin-bottom:14px" onclick="openModal()">+ Ajouter mon poids</button>
+
+    <!-- History -->
+    <div class="slabel">Historique</div>
+    <div class="card" id="history-list">
+      <div style="padding:16px;text-align:center;font-size:13px;color:var(--muted)">Aucune donnée</div>
+    </div>
+
+  </div>
+</div>
+
+<nav class="nav" style="position:fixed;bottom:0;left:0;right:0;z-index:100;background:var(--card,#fff);border-top:0.5px solid rgba(0,0,0,0.1);padding-bottom:env(safe-area-inset-bottom,0px);">
+  <a href="index.html"><span class="ni">🏠</span><span class="nl">Dashboard</span></a>
+  <a href="repas.html"><span class="ni">🍽️</span><span class="nl">Repas</span></a>
+  <a href="sport.html"><span class="ni">⚡</span><span class="nl">Sport</span></a>
+  <a href="objectifs.html"><span class="ni">🎯</span><span class="nl">Objectifs</span></a>
+  <a href="poids.html" class="active"><span class="ni">⚖️</span><span class="nl">Poids</span></a>
+</nav>
+
+<!-- Modal -->
+<div class="overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle">Ajouter mon poids ⚖️</div>
+    <div class="ig">
+      <label>Poids (kg)</label>
+      <input class="inp" id="w-value" type="number" step="0.1" min="30" max="250" placeholder="ex: 72.5">
+    </div>
+    <div class="ig" style="margin-bottom:20px">
+      <label>Date</label>
+      <input class="inp" id="w-date" type="date">
+    </div>
+    <button class="btn btn-p" id="w-btn" onclick="saveWeight()">Enregistrer ⚖️</button>
+    <button class="btn btn-g" style="margin-top:8px" onclick="document.getElementById('modal').classList.remove('open')">Annuler</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+<script>
+let profile, partner, allMyWeights = [], allPartnerWeights = []
+let currentView = 'me', currentRange = 7
+let chart = null
+
+function closeModal(e) {
+  if (e.target === document.getElementById('modal')) document.getElementById('modal').classList.remove('open')
+}
+
+function openModal() {
+  document.getElementById('w-value').value = ''
+  document.getElementById('w-date').value = new Date().toISOString().split('T')[0]
+  document.getElementById('modal').classList.add('open')
+}
+
+function setView(v) {
+  currentView = v
+  document.getElementById('btn-me').className = 'toggle-btn' + (v === 'me' ? ' active-a' : '')
+  document.getElementById('btn-partner').className = 'toggle-btn' + (v === 'partner' ? ' active-b' : '')
+  document.getElementById('btn-both').className = 'toggle-btn' + (v === 'both' ? ' active-a' : '')
+  render()
+}
+
+function setRange(days, el) {
+  currentRange = days
+  document.querySelectorAll('.range-tab').forEach(t => t.classList.remove('sel'))
+  el.classList.add('sel')
+  render()
+}
+
+function filterByRange(entries) {
+  const cutoff = new Date()
+  cutoff.setDate(cutoff.getDate() - currentRange)
+  return entries.filter(e => new Date(e.date) >= cutoff)
+}
+
+function render() {
+  const myData = filterByRange(allMyWeights)
+  const parData = filterByRange(allPartnerWeights)
+
+  // Stats (always "me" for stats)
+  const statsData = currentView === 'partner' ? parData : myData
+  if (statsData.length > 0) {
+    const cur = statsData[statsData.length - 1].weight
+    const start = statsData[0].weight
+    const delta = (cur - start).toFixed(1)
+    const sign = delta > 0 ? '+' : ''
+    document.getElementById('stat-current').textContent = cur
+    document.getElementById('stat-start').textContent = start
+    const deltaEl = document.getElementById('stat-delta')
+    deltaEl.textContent = sign + delta + ' kg'
+    deltaEl.style.color = delta < 0 ? 'var(--green)' : delta > 0 ? 'var(--coral)' : 'var(--muted)'
+  } else {
+    document.getElementById('stat-current').textContent = '—'
+    document.getElementById('stat-start').textContent = '—'
+    document.getElementById('stat-delta').textContent = '—'
+    document.getElementById('stat-delta').style.color = 'var(--muted)'
+  }
+
+  // Chart
+  buildChart(myData, parData)
+
+  // History
+  buildHistory(currentView === 'partner' ? parData : myData, currentView === 'partner')
+}
+
+function buildChart(myData, parData) {
+  const ctx = document.getElementById('weightChart').getContext('2d')
+
+  // Gather all dates
+  const allDates = [...new Set([
+    ...myData.map(e => e.date),
+    ...parData.map(e => e.date)
+  ])].sort()
+
+  const myMap = Object.fromEntries(myData.map(e => [e.date, e.weight]))
+  const parMap = Object.fromEntries(parData.map(e => [e.date, e.weight]))
+
+  const datasets = []
+
+  if (currentView !== 'partner' && myData.length > 0) {
+    datasets.push({
+      label: profile?.name || 'Moi',
+      data: allDates.map(d => myMap[d] ?? null),
+      borderColor: '#639922',
+      backgroundColor: 'rgba(99,153,34,0.1)',
+      tension: 0.3,
+      spanGaps: true,
+      pointRadius: 4,
+      pointBackgroundColor: '#639922',
+      fill: true,
+    })
+  }
+
+  if (currentView !== 'me' && parData.length > 0) {
+    datasets.push({
+      label: partner?.name || 'Partenaire',
+      data: allDates.map(d => parMap[d] ?? null),
+      borderColor: '#7F77DD',
+      backgroundColor: 'rgba(127,119,221,0.1)',
+      tension: 0.3,
+      spanGaps: true,
+      pointRadius: 4,
+      pointBackgroundColor: '#7F77DD',
+      fill: true,
+    })
+  }
+
+  if (chart) chart.destroy()
+
+  if (datasets.length === 0 || allDates.length === 0) {
+    document.getElementById('weightChart').parentElement.innerHTML =
+      '<div style="height:180px;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--muted)">Pas encore de données sur cette période</div>'
+    return
+  }
+
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: allDates.map(d => {
+        const dt = new Date(d + 'T12:00:00')
+        return dt.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+      }),
+      datasets
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: currentView === 'both', labels: { font: { size: 11 }, boxWidth: 12 } },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.parsed.y} kg`
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { font: { size: 10 }, maxTicksLimit: 6 },
+          grid: { display: false }
+        },
+        y: {
+          ticks: { font: { size: 10 }, callback: v => v + ' kg' },
+          grid: { color: 'rgba(0,0,0,0.04)' }
+        }
+      }
+    }
+  })
+}
+
+function buildHistory(data, isPartner) {
+  const sorted = [...data].sort((a, b) => b.date.localeCompare(a.date))
+  if (sorted.length === 0) {
+    document.getElementById('history-list').innerHTML =
+      '<div style="padding:16px;text-align:center;font-size:13px;color:var(--muted)">Aucune donnée sur cette période</div>'
+    return
+  }
+
+  document.getElementById('history-list').innerHTML = sorted.map((e, i) => {
+    const prev = sorted[i + 1]
+    const diff = prev ? (e.weight - prev.weight).toFixed(1) : null
+    const diffHtml = diff === null ? '' :
+      diff > 0 ? `<span class="weight-diff-pos">▲ +${diff} kg</span>` :
+      diff < 0 ? `<span class="weight-diff-neg">▼ ${diff} kg</span>` :
+      `<span class="weight-diff-zero">= stable</span>`
+
+    const dt = new Date(e.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
+    const dotClass = isPartner ? 'av-b' : 'av-a'
+
+    return `<div class="weight-log-row">
+      <div class="av ${dotClass}" style="font-size:10px;width:28px;height:28px">${isPartner ? (partner?.name?.[0]||'P') : (profile?.name?.[0]||'M')}</div>
+      <div style="flex:1">
+        <div class="weight-val">${e.weight} <span style="font-size:13px;font-weight:400;color:var(--muted)">kg</span></div>
+        <div class="weight-date">${dt}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        ${diffHtml}
+        ${!isPartner ? `<button onclick="deleteWeight('${e.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0">🗑️</button>` : ''}
+      </div>
+    </div>`
+  }).join('')
+}
+
+async function saveWeight() {
+  const val = parseFloat(document.getElementById('w-value').value)
+  const date = document.getElementById('w-date').value
+  if (!val || val < 20 || val > 500) { alert('Poids invalide'); return }
+  if (!date) { alert('Date manquante'); return }
+
+  const btn = document.getElementById('w-btn')
+  btn.disabled = true; btn.textContent = '...'
+
+  const { error } = await db.from('weight_logs').insert({
+    user_id: profile.id,
+    couple_id: profile.couple_id,
+    weight: val,
+    date
+  })
+
+  btn.disabled = false; btn.textContent = 'Enregistrer ⚖️'
+
+  if (error) { alert('Erreur : ' + error.message); return }
+  document.getElementById('modal').classList.remove('open')
+  await loadWeights()
+  render()
+}
+
+async function deleteWeight(id) {
+  if (!confirm('Supprimer cette entrée ?')) return
+  await db.from('weight_logs').delete().eq('id', id)
+  await loadWeights()
+  render()
+}
+
+async function loadWeights() {
+  const { data } = await db.from('weight_logs')
+    .select('*')
+    .eq('couple_id', profile.couple_id)
+    .order('date', { ascending: true })
+
+  allMyWeights = (data || []).filter(e => e.user_id === profile.id)
+  allPartnerWeights = partner ? (data || []).filter(e => e.user_id === partner.id) : []
+}
+
+async function init() {
+  const { data: { session } } = await db.auth.getSession()
+  if (!session) { window.location.replace('login.html'); return }
+  const { data: p } = await db.from('profiles').select('*').eq('id', session.user.id).single()
+  if (!p) { await db.auth.signOut(); window.location.replace('login.html'); return }
+  profile = p
+
+  const { data: par } = await db.from('profiles').select('*').eq('couple_id', profile.couple_id).neq('id', profile.id).maybeSingle()
+  partner = par
+  if (partner) {
+    document.getElementById('btn-partner').textContent = partner.name
+  }
+
+  await loadWeights()
+  render()
+}
+init()
+</script>
+</body>
+</html>

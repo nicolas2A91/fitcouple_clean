@@ -127,24 +127,24 @@
     </div>
 
     <!-- Sticky Stats Bar -->
-    <div class="sticky-bar">
+    <div class="sticky-bar" style="grid-template-columns:repeat(4,1fr)">
       <div class="sb-item" onclick="document.getElementById('sec-repas').scrollIntoView({behavior:'smooth'})">
         <span class="sb-icon">🥗</span>
         <span class="sb-val" id="stat-meals">0</span>
         <span class="sb-label">Repas</span>
         <div class="sb-bar"><div class="sb-fill" id="bar-meals" style="background:#639922;width:0%"></div></div>
       </div>
+      <div class="sb-item" onclick="document.getElementById('sec-calories').scrollIntoView({behavior:'smooth'})">
+        <span class="sb-icon">🔥</span>
+        <span class="sb-val" id="stat-calories">—</span>
+        <span class="sb-label">kcal</span>
+        <div class="sb-bar"><div class="sb-fill" id="bar-calories" style="background:#E24B4A;width:0%"></div></div>
+      </div>
       <div class="sb-item" onclick="document.getElementById('sec-defis').scrollIntoView({behavior:'smooth'})">
         <span class="sb-icon">⚡</span>
         <span class="sb-val" id="stat-defis">0/0</span>
         <span class="sb-label">Défis</span>
         <div class="sb-bar"><div class="sb-fill" id="bar-defis" style="background:#7F77DD;width:0%"></div></div>
-      </div>
-      <div class="sb-item" onclick="document.getElementById('sec-poop').scrollIntoView({behavior:'smooth'})">
-        <span class="sb-icon">💩</span>
-        <span class="sb-val" id="stat-poop">0</span>
-        <span class="sb-label">Passages</span>
-        <div class="sb-bar"><div class="sb-fill" id="bar-poop" style="background:#D85A30;width:0%"></div></div>
       </div>
       <div class="sb-item" onclick="document.getElementById('sec-objectifs').scrollIntoView({behavior:'smooth'})">
         <span class="sb-icon">🎯</span>
@@ -177,6 +177,68 @@
               <span class="milestone">7</span>
               <span class="milestone">14</span>
               <span class="milestone">30</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Calories du jour -->
+      <div class="section-card-new" id="sec-calories">
+        <div class="sec-header-new">
+          <span class="sec-title-new">🔥 Calories aujourd'hui</span>
+          <a href="repas.html" class="sec-link-new">Détail →</a>
+        </div>
+        <div style="padding:14px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+            <div style="text-align:center;padding:10px;background:rgba(0,0,0,0.03);border-radius:12px">
+              <div style="font-size:10px;color:var(--muted);margin-bottom:4px">Mes calories</div>
+              <div style="font-size:24px;font-weight:700;color:var(--text)" id="dash-my-cal">—</div>
+              <div style="font-size:10px;color:var(--muted)">kcal</div>
+            </div>
+            <div style="text-align:center;padding:10px;background:rgba(0,0,0,0.03);border-radius:12px">
+              <div style="font-size:10px;color:var(--muted);margin-bottom:4px" id="dash-partner-cal-label">Partenaire</div>
+              <div style="font-size:24px;font-weight:700;color:var(--text)" id="dash-partner-cal">—</div>
+              <div style="font-size:10px;color:var(--muted)">kcal</div>
+            </div>
+          </div>
+          <div style="margin-bottom:6px">
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px">
+              <span>Objectif 2000 kcal</span>
+              <span id="dash-cal-pct">0%</span>
+            </div>
+            <div style="height:6px;border-radius:3px;background:rgba(0,0,0,0.07);overflow:hidden">
+              <div id="dash-cal-bar" style="height:100%;border-radius:3px;background:#E24B4A;width:0%;transition:width 0.5s"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Calories du jour -->
+      <div class="section-card-new" id="sec-calories">
+        <div class="sec-header-new">
+          <span class="sec-title-new">🔥 Calories aujourd'hui</span>
+          <a href="repas.html" class="sec-link-new">Détail →</a>
+        </div>
+        <div style="padding:14px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+            <div style="text-align:center;padding:10px;background:rgba(0,0,0,0.03);border-radius:12px">
+              <div style="font-size:10px;color:var(--muted);margin-bottom:4px">Mes calories</div>
+              <div style="font-size:24px;font-weight:700;color:var(--text)" id="dash-my-cal">—</div>
+              <div style="font-size:10px;color:var(--muted)">kcal</div>
+            </div>
+            <div style="text-align:center;padding:10px;background:rgba(0,0,0,0.03);border-radius:12px">
+              <div style="font-size:10px;color:var(--muted);margin-bottom:4px" id="dash-partner-lbl">Partenaire</div>
+              <div style="font-size:24px;font-weight:700;color:var(--text)" id="dash-partner-cal">—</div>
+              <div style="font-size:10px;color:var(--muted)">kcal</div>
+            </div>
+          </div>
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px">
+              <span>Objectif 2000 kcal</span>
+              <span id="dash-cal-pct">0%</span>
+            </div>
+            <div style="height:6px;border-radius:3px;background:rgba(0,0,0,0.07);overflow:hidden">
+              <div id="dash-cal-bar" style="height:100%;border-radius:3px;background:#E24B4A;width:0%;transition:width 0.5s"></div>
             </div>
           </div>
         </div>
@@ -264,7 +326,7 @@
       <a href="repas.html"><span class="ni">🍽️</span><span class="nl">Repas</span></a>
       <a href="sport.html"><span class="ni">⚡</span><span class="nl">Sport</span></a>
       <a href="objectifs.html"><span class="ni">🎯</span><span class="nl">Objectifs</span></a>
-      <a href="caca.html"><span class="ni">💩</span><span class="nl">Journal</span></a>
+      <a href="poids.html"><span class="ni">⚖️</span><span class="nl">Poids</span></a>
     </div>
   </div>
 
@@ -364,18 +426,36 @@
 
         document.getElementById('user-name').textContent = profile?.name || 'Nico';
 
-        const [mRes, cRes, pRes, streak] = await Promise.all([
+        const today = new Date().toISOString().split('T')[0];
+        const [mRes, calRes, cRes, pRes, streak] = await Promise.all([
           db.from('meals').select('*, profiles(name)').eq('couple_id', couple.id).order('date', { ascending: false }).limit(3),
+          db.from('meals').select('user_id, calories').eq('couple_id', couple.id).eq('date', today),
           db.from('challenges').select('*, profiles(name)').eq('couple_id', couple.id).order('created_at', { ascending: false }).limit(5),
           db.from('poop').select('*, profiles(name)').eq('couple_id', couple.id).order('logged_at', { ascending: false }).limit(3),
           getOrCreateStreak(couple.id)
         ]);
 
         const meals      = mRes.data  || [];
+        const calEntries = calRes.data || [];
         const challenges = cRes.data  || [];
         const poops      = pRes.data  || [];
         const done       = challenges.filter(c => c.completed).length;
         const goalPct    = challenges.length > 0 ? Math.round((done / challenges.length) * 100) : 0;
+
+        // Calories
+        const myCal     = calEntries.filter(e => e.user_id === profile?.id).reduce((s, e) => s + (e.calories||0), 0);
+        const parCal    = calEntries.filter(e => e.user_id !== profile?.id).reduce((s, e) => s + (e.calories||0), 0);
+        const calGoal   = 2000;
+        const calPct    = Math.min(100, Math.round((myCal / calGoal) * 100));
+        const calColor  = myCal === 0 ? '#E24B4A' : myCal < 1500 ? '#639922' : myCal < 2200 ? '#F59E0B' : '#E24B4A';
+        document.getElementById('dash-my-cal').textContent    = myCal || '—';
+        document.getElementById('dash-my-cal').style.color    = myCal ? calColor : 'var(--muted)';
+        document.getElementById('dash-partner-cal').textContent = parCal || '—';
+        document.getElementById('dash-cal-pct').textContent   = calPct + '%';
+        document.getElementById('dash-cal-bar').style.width   = calPct + '%';
+        document.getElementById('dash-cal-bar').style.background = calColor;
+        document.getElementById('stat-calories').textContent  = myCal || '—';
+        document.getElementById('bar-calories').style.width   = calPct + '%';
 
         updateStreak(streak.current_streak, streak.best_streak);
         updateStickyBar(meals.length, done, challenges.length, poops.length, goalPct);

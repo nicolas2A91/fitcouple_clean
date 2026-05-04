@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="config.js"></script>
+
 </head>
 <body>
 <div class="app">
@@ -20,7 +21,7 @@
   <a href="repas.html" class="active"><span class="ni">🍽️</span><span class="nl">Repas</span><div class="nd"></div></a>
   <a href="sport.html"><span class="ni">⚡</span><span class="nl">Sport</span></a>
   <a href="objectifs.html"><span class="ni">🎯</span><span class="nl">Objectifs</span></a>
-  <a href="caca.html"><span class="ni">💩</span><span class="nl">Journal</span></a>
+  <a href="poids.html"><span class="ni">⚖️</span><span class="nl">Poids</span></a>
 </nav>
 
 <!-- Modal ajouter/modifier -->
@@ -186,10 +187,27 @@ async function loadMeals() {
   const byType = {}
   ;(meals||[]).forEach(m => { if(!byType[m.meal_type]) byType[m.meal_type]=[]; byType[m.meal_type].push(m) })
 
+  const totalCal = (meals||[]).reduce((s, m) => s + (m.calories || 0), 0)
+  const myCal = (meals||[]).filter(m => m.user_id === profile.id).reduce((s, m) => s + (m.calories || 0), 0)
+  const calColor = myCal === 0 ? 'var(--muted)' : myCal < 1500 ? 'var(--green)' : myCal < 2200 ? 'var(--amber)' : 'var(--coral)'
+
   let html = `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0 12px">
     <div class="slabel" style="padding:0;text-transform:capitalize">${selLabel}</div>
     <button class="btn btn-p" style="width:auto;padding:7px 14px;font-size:12px" onclick="openAddModal()">+ Ajouter</button>
-  </div>`
+  </div>
+  ${myCal > 0 || totalCal > 0 ? `
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+    <div class="card" style="padding:12px;text-align:center">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:3px">Mes calories</div>
+      <div style="font-size:22px;font-weight:700;color:${calColor}">${myCal}</div>
+      <div style="font-size:10px;color:var(--muted)">kcal</div>
+    </div>
+    <div class="card" style="padding:12px;text-align:center">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:3px">Total couple</div>
+      <div style="font-size:22px;font-weight:700;color:var(--text)">${totalCal}</div>
+      <div style="font-size:10px;color:var(--muted)">kcal</div>
+    </div>
+  </div>` : ''}`
 
   const types = { petit_dej:'🌅 Petit-déj', dejeuner:'☀️ Déjeuner', diner:'🌙 Dîner', snack:'⚡ Snack' }
   Object.entries(types).forEach(([type, label]) => {
