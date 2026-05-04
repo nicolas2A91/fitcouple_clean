@@ -7,23 +7,13 @@
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="config.js"></script>
-  <style>
-    .login-wrap{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:32px 24px;max-width:420px;margin:0 auto}
-    .logo{text-align:center;margin-bottom:32px}
-    .logo-icon{font-size:56px;margin-bottom:10px}
-    .logo h1{font-size:30px;font-weight:800;letter-spacing:-1px}
-    .logo p{color:var(--muted);font-size:14px;margin-top:4px}
-    .tabs{display:flex;background:var(--card);border-radius:10px;padding:4px;margin-bottom:24px;border:.5px solid var(--border)}
-    .tab{flex:1;padding:9px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:500;transition:all .15s;background:transparent;color:var(--muted)}
-    .tab.active{background:var(--green);color:#fff}
-  </style>
 </head>
-<body>
+<body style="background:var(--bg)">
 <div class="login-wrap">
   <div class="logo">
     <div class="logo-icon">💪</div>
     <h1>FitCouple</h1>
-    <p>Anna &amp; Nico</p>
+    <p>Anna &amp; Nico · Votre app santé</p>
   </div>
 
   <div class="tabs">
@@ -31,22 +21,20 @@
     <button class="tab" id="tab-signup" onclick="switchMode('signup')">Inscription</button>
   </div>
 
-  <div id="alert"></div>
+  <div id="alert" style="margin-bottom:4px"></div>
 
-  <!-- Login -->
   <div id="form-login">
     <div class="ig"><label>Email</label><input class="inp" id="l-email" type="email" placeholder="ton@email.com" autocomplete="email"></div>
     <div class="ig" style="margin-bottom:24px"><label>Mot de passe</label><input class="inp" id="l-pass" type="password" placeholder="••••••••" autocomplete="current-password"></div>
     <button class="btn btn-p" id="btn-login" onclick="handleLogin()">Se connecter</button>
   </div>
 
-  <!-- Signup -->
   <div id="form-signup" style="display:none">
     <div class="ig"><label>Ton prénom</label><input class="inp" id="s-name" placeholder="Anna ou Nico" autocomplete="given-name"></div>
     <div class="ig">
       <label>Code couple</label>
       <input class="inp" id="s-couple" placeholder="ex: anna-et-nico-2024">
-      <p style="font-size:11px;color:var(--muted);margin-top:5px">🔐 Le même code pour vous deux — c'est votre lien secret</p>
+      <p style="font-size:11px;color:var(--text3);margin-top:6px;line-height:1.4">🔐 Le même code pour vous deux — c'est votre lien secret</p>
     </div>
     <div class="ig"><label>Email</label><input class="inp" id="s-email" type="email" placeholder="ton@email.com" autocomplete="email"></div>
     <div class="ig" style="margin-bottom:24px"><label>Mot de passe</label><input class="inp" id="s-pass" type="password" placeholder="••••••••" autocomplete="new-password"></div>
@@ -56,15 +44,9 @@
 
 <script>
   let busy = false
-
-  // Si déjà connecté → index directement
-  // On écoute onAuthStateChange UNE seule fois
   const { data: { subscription: initSub } } = db.auth.onAuthStateChange((event, session) => {
     initSub.unsubscribe()
-    if (session) {
-      busy = true
-      window.location.replace('index.html')
-    }
+    if (session) { busy = true; window.location.replace('index.html') }
   })
 
   function switchMode(mode) {
@@ -82,8 +64,7 @@
 
   function setBtn(id, loading, label) {
     const b = document.getElementById(id)
-    b.disabled = loading
-    b.textContent = loading ? '...' : label
+    b.disabled = loading; b.textContent = loading ? '...' : label
   }
 
   async function handleLogin() {
@@ -91,70 +72,32 @@
     const email = document.getElementById('l-email').value.trim()
     const pass  = document.getElementById('l-pass').value
     if (!email || !pass) { showAlert('Remplis tous les champs.'); return }
-
     setBtn('btn-login', true, 'Se connecter')
-
     const { data, error } = await db.auth.signInWithPassword({ email, password: pass })
-
     if (error) {
-      const msg = error.message.includes('Invalid') ? '❌ Email ou mot de passe incorrect.'
-        : error.message.includes('not confirmed') ? '❌ Email non confirmé — vérifie ta boîte mail.'
-        : '❌ ' + error.message
-      showAlert(msg)
-      setBtn('btn-login', false, 'Se connecter')
-      return
+      showAlert(error.message.includes('Invalid') ? '❌ Email ou mot de passe incorrect.' : '❌ ' + error.message)
+      setBtn('btn-login', false, 'Se connecter'); return
     }
-
-    if (!data.session) {
-      showAlert('❌ Connexion échouée — réessaie.')
-      setBtn('btn-login', false, 'Se connecter')
-      return
-    }
-
-    busy = true
-    showAlert('✅ Connecté !', 'ok')
-    window.location.replace('index.html')
+    if (!data.session) { showAlert('❌ Connexion échouée.'); setBtn('btn-login', false, 'Se connecter'); return }
+    busy = true; showAlert('✅ Connecté !', 'ok'); window.location.replace('index.html')
   }
 
   async function handleSignup() {
     if (busy) return
-    const name     = document.getElementById('s-name').value.trim()
+    const name = document.getElementById('s-name').value.trim()
     const coupleId = document.getElementById('s-couple').value.trim().toLowerCase()
-    const email    = document.getElementById('s-email').value.trim()
-    const pass     = document.getElementById('s-pass').value
-
+    const email = document.getElementById('s-email').value.trim()
+    const pass = document.getElementById('s-pass').value
     if (!name || !coupleId || !email || !pass) { showAlert('Remplis tous les champs.'); return }
-    if (pass.length < 6) { showAlert('❌ Mot de passe trop court (6 caractères min).'); return }
-
+    if (pass.length < 6) { showAlert('❌ Mot de passe trop court (6 min).'); return }
     setBtn('btn-signup', true, 'Créer mon compte')
-
     const { data, error } = await db.auth.signUp({ email, password: pass })
-
-    if (error) {
-      showAlert('❌ ' + error.message)
-      setBtn('btn-signup', false, 'Créer mon compte')
-      return
-    }
-
+    if (error) { showAlert('❌ ' + error.message); setBtn('btn-signup', false, 'Créer mon compte'); return }
     const userId = data.user?.id
-    if (!userId) {
-      showAlert('✅ Vérifie ton email pour confirmer, puis connecte-toi.', 'ok')
-      switchMode('login')
-      setBtn('btn-signup', false, 'Créer mon compte')
-      return
-    }
-
+    if (!userId) { showAlert('✅ Vérifie ton email puis connecte-toi.', 'ok'); switchMode('login'); setBtn('btn-signup', false, 'Créer mon compte'); return }
     await db.from('profiles').insert({ id: userId, name, couple_id: coupleId, color: 'green' })
-
-    if (data.session) {
-      busy = true
-      showAlert('✅ Compte créé !', 'ok')
-      window.location.replace('index.html')
-    } else {
-      showAlert('✅ Compte créé ! Vérifie ton email puis connecte-toi.', 'ok')
-      switchMode('login')
-      setBtn('btn-signup', false, 'Créer mon compte')
-    }
+    if (data.session) { busy = true; showAlert('✅ Compte créé !', 'ok'); window.location.replace('index.html') }
+    else { showAlert('✅ Compte créé ! Vérifie ton email.', 'ok'); switchMode('login'); setBtn('btn-signup', false, 'Créer mon compte') }
   }
 </script>
 </body>
