@@ -7,28 +7,91 @@
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="light">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="config.js"></script>
+  <style>
+    .hero-card{
+      background:linear-gradient(135deg,#0F6E56 0%,#1D9E75 60%,#159060 100%);
+      border-radius:20px;padding:20px;margin-bottom:16px;
+      box-shadow:0 4px 24px rgba(29,158,117,.28);
+      color:#fff;position:relative;overflow:hidden;
+    }
+    .hero-card::before{
+      content:'';position:absolute;top:-40px;right:-30px;
+      width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.07);
+    }
+    .hero-card::after{
+      content:'';position:absolute;bottom:-25px;right:30px;
+      width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.05);
+    }
+    .streak-num{
+      font-family:'Syne',sans-serif;font-size:52px;font-weight:800;
+      line-height:1;letter-spacing:-2px;
+    }
+    .quick-stat{
+      background:var(--surface);border:1px solid var(--border);
+      border-radius:14px;padding:14px 12px;text-align:center;
+      box-shadow:var(--shadow);flex:1;
+    }
+    .quick-stat-v{
+      font-family:'Syne',sans-serif;font-size:22px;font-weight:800;
+      line-height:1;letter-spacing:-.5px;
+    }
+    .quick-stat-l{font-size:10px;color:var(--text3);margin-top:4px;font-weight:600;letter-spacing:.3px}
+    .challenge-pill{
+      display:inline-flex;align-items:center;gap:5px;
+      padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.5px;
+    }
+    .section-hdr{
+      display:flex;justify-content:space-between;align-items:center;
+      padding:14px 0 8px;
+    }
+    .section-hdr-title{
+      font-size:10px;color:var(--text3);text-transform:uppercase;
+      letter-spacing:1.5px;font-weight:700;
+    }
+    .section-hdr-link{font-size:12px;color:var(--accent);font-weight:600;text-decoration:none}
+    .meal-chip{
+      display:flex;align-items:center;gap:8px;padding:8px 0;
+      border-bottom:1px solid var(--border);
+    }
+    .meal-chip:last-child{border-bottom:none}
+    .meal-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+    .poop-row{
+      display:flex;align-items:center;gap:12px;
+      padding:12px 0;
+    }
+    .streak-bar-item{
+      flex:1;height:4px;border-radius:2px;
+    }
+    .logout-btn{
+      background:none;border:none;cursor:pointer;font-size:20px;
+      padding:6px;border-radius:10px;transition:background .15s;color:var(--text3);
+    }
+    .logout-btn:hover{background:var(--border)}
+  </style>
 </head>
 <body>
 <div class="app">
   <div class="hdr">
     <div style="display:flex;justify-content:space-between;align-items:flex-start">
       <div>
-        <p id="date-label" style="font-size:12px;color:var(--muted);text-transform:capitalize"></p>
-        <h1 id="greeting">Bonjour 👋</h1>
+        <p id="date-label" style="font-size:12px;color:var(--text3);text-transform:capitalize;font-weight:500"></p>
+        <h1 id="greeting" style="margin-top:2px">Bonjour 👋</h1>
       </div>
-      <button onclick="logout()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;margin-top:4px">⏎</button>
+      <button onclick="logout()" class="logout-btn">⎋</button>
     </div>
   </div>
 
   <div class="page" id="content">
-    <div class="loading">⚡ Chargement...</div>
+    <div class="loading">
+      <span>⚡</span>
+      <span>Chargement...</span>
+    </div>
   </div>
 </div>
 
-<!-- Bottom Nav -->
 <nav class="nav">
   <a href="index.html" class="active"><span class="ni">🏠</span><span class="nl">Home</span><div class="nd"></div></a>
   <a href="repas.html"><span class="ni">📅</span><span class="nl">Repas</span></a>
@@ -38,26 +101,20 @@
 </nav>
 
 <script>
-async function logout() {
-  await db.auth.signOut()
-  window.location.href = 'login.html'
-}
+async function logout() { await db.auth.signOut(); window.location.href = 'login.html' }
 
 async function init() {
-  // Inline auth - pas de dépendance à requireAuth()
   const { data: { session } } = await db.auth.getSession()
   if (!session) { window.location.replace('login.html'); return }
   const { data: profile } = await db.from('profiles').select('*').eq('id', session.user.id).single()
   if (!profile) { await db.auth.signOut(); window.location.replace('login.html'); return }
 
-  // Date label
   const now = new Date()
   document.getElementById('date-label').textContent = now.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' })
   document.getElementById('greeting').textContent = `Bonjour ${profile.name} 👋`
 
   const today = now.toISOString().split('T')[0]
 
-  // Load all data in parallel
   const [mealsRes, challengesRes, poopRes, objRes, streakRes, partnerRes] = await Promise.all([
     db.from('meals').select('*').eq('date', today).eq('couple_id', profile.couple_id),
     db.from('challenges').select('*, challenge_progress(*)').eq('challenge_date', today).eq('couple_id', profile.couple_id),
@@ -74,77 +131,114 @@ async function init() {
   const streak = streakRes
   const partner = partnerRes.data
 
-  // Compute stats
   const challengesDone = challenges.filter(c => c.challenge_progress?.some(p => p.user_id === profile.id && p.completed)).length
   const myTodayPoop = poop.filter(p => p.user_id === profile.id && p.logged_at.startsWith(today)).length
   const objPct = objectives.length ? Math.round(objectives.reduce((s,o) => s + Math.min(100, o.current_value/o.target*100), 0) / objectives.length) : 0
 
   const SCORE_BADGE = {'A+':'b-green','A':'b-teal','B':'b-amber','C':'b-coral','D':'b-coral'}
-  const streakLabel = streak.current_streak >= 7 ? '🔥 EN FEU' : streak.current_streak >= 3 ? '⚡ EN ROUTE' : '🌱 DÉBUT'
+  const streakEmoji = streak.current_streak >= 7 ? '🔥' : streak.current_streak >= 3 ? '⚡' : '🌱'
+  const streakLabel = streak.current_streak >= 7 ? 'En feu !' : streak.current_streak >= 3 ? 'En route' : 'Démarrage'
+
+  const bars = Array.from({length:7}, (_,i) => {
+    const filled = i < Math.min(7, streak.current_streak)
+    return `<div class="streak-bar-item" style="background:${filled?'rgba(255,255,255,.7)':'rgba(255,255,255,.15)'}"></div>`
+  }).join('')
 
   document.getElementById('content').innerHTML = `
-    <!-- Streak -->
-    <div class="streak">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <div style="display:flex;align-items:center;gap:10px">
-          <div class="av av-a">${profile.name[0]}</div>
-          ${partner ? `<div class="av av-b">${partner.name[0]}</div>` : ''}
-          <div>
-            <div style="font-size:12px;color:var(--muted)">Streak couple</div>
-            <div style="font-size:11px;color:var(--dim)">Record : ${streak.best_streak} j</div>
+
+    <!-- Hero Streak -->
+    <div class="hero-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;position:relative;z-index:1">
+        <div>
+          <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;opacity:.7;margin-bottom:6px">Streak couple</div>
+          <div style="display:flex;align-items:baseline;gap:8px">
+            <div class="streak-num">${streak.current_streak}</div>
+            <div style="font-size:13px;opacity:.8;font-weight:500">jours</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;margin-top:8px">
+            ${partner ? `
+              <div class="av" style="width:26px;height:26px;font-size:10px;background:rgba(255,255,255,.2);color:#fff">${profile.name[0]}</div>
+              <div class="av" style="width:26px;height:26px;font-size:10px;background:rgba(255,255,255,.15);color:#fff">${partner.name[0]}</div>
+            ` : `<div class="av" style="width:26px;height:26px;font-size:10px;background:rgba(255,255,255,.2);color:#fff">${profile.name[0]}</div>`}
+            <span style="font-size:12px;opacity:.8;font-weight:500">${streakEmoji} ${streakLabel}</span>
           </div>
         </div>
         <div style="text-align:right">
-          <div style="font-size:32px;font-weight:800;color:var(--amber);line-height:1">${streak.current_streak}</div>
-          <span class="badge b-teal">${streakLabel}</span>
+          <div style="font-size:10px;opacity:.6;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Record</div>
+          <div style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;opacity:.8;letter-spacing:-1px">${streak.best_streak}</div>
         </div>
+      </div>
+      <div style="display:flex;gap:4px;margin-top:14px;position:relative;z-index:1">${bars}</div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <div class="quick-stat">
+        <div class="quick-stat-v" style="color:var(--anna)">🥗 ${meals.length}</div>
+        <div class="quick-stat-l">Repas</div>
+      </div>
+      <div class="quick-stat">
+        <div class="quick-stat-v" style="color:var(--accent)">⚡ ${challengesDone}/${challenges.length}</div>
+        <div class="quick-stat-l">Défis</div>
+      </div>
+      <div class="quick-stat">
+        <div class="quick-stat-v" style="color:var(--amber)">💩 ${myTodayPoop}</div>
+        <div class="quick-stat-l">Caca</div>
+      </div>
+      <div class="quick-stat">
+        <div class="quick-stat-v" style="color:var(--coral)">🎯 ${objPct}%</div>
+        <div class="quick-stat-l">Objectifs</div>
       </div>
     </div>
 
-    <!-- Stats -->
-    <div class="slabel">Aujourd'hui</div>
-    <div class="stats">
-      <div class="stat"><div class="stat-v" style="color:var(--anna)">🥗 ${meals.length}</div><div class="stat-l">Repas</div></div>
-      <div class="stat"><div class="stat-v" style="color:var(--green)">⚡ ${challengesDone}/${challenges.length}</div><div class="stat-l">Défis</div></div>
-      <div class="stat"><div class="stat-v" style="color:var(--amber)">💩 ${myTodayPoop}</div><div class="stat-l">Passages</div></div>
-      <div class="stat"><div class="stat-v" style="color:var(--coral)">🎯 ${objPct}%</div><div class="stat-l">Objectifs</div></div>
-    </div>
-
     ${challenges.length ? `
-    <!-- Défi du jour -->
-    <div class="slabel">Défi du jour</div>
+    <div class="section-hdr">
+      <span class="section-hdr-title">Défis du jour</span>
+      <a href="sport.html" class="section-hdr-link">Voir tout →</a>
+    </div>
     ${challenges.slice(0,2).map(c => {
       const myP = c.challenge_progress?.find(p => p.user_id === profile.id)
       const pct = c.target > 0 ? Math.min(100, Math.round(((myP?.value||0)/c.target)*100)) : 0
-      return `<div class="card">
-        <div class="card-hdr"><span class="card-title">${c.title}</span>
-          <span class="badge ${myP?.completed ? 'b-green' : 'b-amber'}">${myP?.completed ? 'FAIT ✓' : 'EN COURS'}</span>
+      const done = myP?.completed
+      return `<div class="card" style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
+          <span style="font-size:14px;font-weight:600;color:var(--text);flex:1;padding-right:10px">${c.title}</span>
+          <span class="badge ${done?'b-green':'b-amber'}">${done?'FAIT ✓':'EN COURS'}</span>
         </div>
-        <div style="font-size:12px;color:var(--muted);margin-bottom:6px">${myP?.value||0} / ${c.target} ${c.unit}</div>
-        <div class="prog"><div class="prog-fill" style="width:${pct}%;background:${myP?.completed?'var(--anna)':'var(--green)'}"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text3);margin-bottom:8px">
+          <span>${myP?.value||0} / ${c.target} ${c.unit}</span>
+          <span style="font-weight:600;color:${done?'var(--anna)':'var(--accent)'}">${pct}%</span>
+        </div>
+        <div class="prog">
+          <div class="prog-fill" style="width:${pct}%;background:${done?'var(--anna)':'var(--accent)'}"></div>
+        </div>
       </div>`
     }).join('')}` : ''}
 
     ${meals.length ? `
-    <!-- Repas -->
-    <div class="slabel">Repas du jour</div>
+    <div class="section-hdr">
+      <span class="section-hdr-title">Repas du jour</span>
+      <a href="repas.html" class="section-hdr-link">Voir tout →</a>
+    </div>
     <div class="card">
       ${meals.slice(0,4).map(m => `
-      <div class="row-item">
-        <div class="udot ${m.user_id === profile.id ? 'dot-a' : 'dot-n'}"></div>
-        <div style="font-size:13px">${m.name}</div>
+      <div class="meal-chip">
+        <div class="meal-dot" style="background:${m.user_id === profile.id ? 'var(--anna)' : 'var(--nico)'}"></div>
+        <span style="font-size:13px;color:var(--text)">${m.name}</span>
       </div>`).join('')}
     </div>` : ''}
 
     ${poop.length ? `
-    <!-- Dernier passage -->
-    <div class="slabel">Dernier passage</div>
+    <div class="section-hdr">
+      <span class="section-hdr-title">Dernier passage</span>
+      <a href="caca.html" class="section-hdr-link">Journal →</a>
+    </div>
     <div class="card">
-      <div class="row-item" style="padding-top:0;padding-bottom:0">
+      <div class="poop-row">
         <div class="av ${poop[0].user_id === profile.id ? 'av-a' : 'av-b'}" style="font-size:10px">${poop[0].profiles?.name?.[0]||'?'}</div>
         <div style="flex:1">
-          <div style="font-size:13px">${BRISTOL_EMOJI[poop[0].bristol_type]} Type ${poop[0].bristol_type}</div>
-          <div style="font-size:11px;color:var(--muted)">${new Date(poop[0].logged_at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</div>
+          <div style="font-size:13px;font-weight:500">${BRISTOL_EMOJI[poop[0].bristol_type]} Type ${poop[0].bristol_type}</div>
+          <div style="font-size:11px;color:var(--text3)">${new Date(poop[0].logged_at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</div>
         </div>
         <span class="badge ${SCORE_BADGE[poop[0].score]||'b-gray'}">${poop[0].score}</span>
       </div>
@@ -153,8 +247,8 @@ async function init() {
     ${meals.length === 0 && challenges.length === 0 ? `
     <div class="empty" style="margin-top:24px">
       <div class="empty-i">🚀</div>
-      <p>Commencez votre journée !</p>
-      <p style="font-size:11px;margin-top:6px">Ajoutez un repas ou un défi sport</p>
+      <p style="font-weight:600;color:var(--text)">Commencez votre journée !</p>
+      <p style="font-size:12px;margin-top:6px">Ajoutez un repas ou un défi sport</p>
     </div>` : ''}
   `
 }
