@@ -26,6 +26,7 @@
       animation: slideUp .3s ease both;
       position: relative;
       overflow: hidden;
+      cursor: pointer;
     }
     .qcard::before {
       content: '';
@@ -62,257 +63,327 @@
       justify-content: space-between;
       align-items: center;
       margin-bottom: 10px;
+      cursor: pointer;
     }
     .section-title {
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--muted);
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
     }
     .section-link {
       font-size: 12px;
       color: var(--purple);
-      font-weight: 600;
       text-decoration: none;
     }
 
-    .meal-row {
+    /* Streak Card */
+    .streak-card {
+      background: linear-gradient(135deg, #4F1D96 0%, #7C3AED 50%, #9333EA 100%);
+      border-radius: var(--rad-lg);
+      padding: 20px;
+      margin-bottom: 16px;
+      color: #fff;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(124,58,237,0.35);
+    }
+    .streak-card::before {
+      content: '';
+      position: absolute;
+      top: -30px; right: -20px;
+      width: 120px; height: 120px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.06);
+    }
+    .streak-card::after {
+      content: '';
+      position: absolute;
+      bottom: -20px; right: 40px;
+      width: 70px; height: 70px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.04);
+    }
+    .streak-title {
+      font-size: 12px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.8);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .streak-days {
+      font-family: 'Bricolage Grotesque', sans-serif;
+      font-size: 48px;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -2px;
+    }
+    .streak-label {
+      font-size: 14px;
+      font-weight: 500;
+      margin-top: 4px;
+    }
+    .streak-record {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 9px 0;
-      border-bottom: 1px solid var(--border);
+      gap: 8px;
+      margin-top: 16px;
+      font-size: 12px;
+      color: rgba(255,255,255,0.7);
     }
-    .meal-row:last-child { border-bottom: none; padding-bottom: 0 }
-    .meal-row:first-child { padding-top: 0 }
-
-    .logout-btn {
-      background: var(--surface2);
-      border: 1px solid var(--border2);
-      border-radius: 10px;
-      cursor: pointer;
-      font-size: 16px;
-      width: 36px; height: 36px;
-      display: flex; align-items: center; justify-content: center;
-      color: var(--muted);
-      transition: all .15s;
-    }
-    .logout-btn:hover { background: var(--coral-xl); color: var(--coral) }
-
-    .challenge-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--rad);
-      padding: 16px;
-      margin-bottom: 10px;
-      box-shadow: var(--shadow-sm);
-      animation: slideUp .3s ease both;
-    }
-    .challenge-card.done {
-      border-color: rgba(5,150,105,0.2);
-      background: linear-gradient(135deg, var(--green-xl) 0%, var(--surface) 100%);
+    .streak-record .badge {
+      background: rgba(255,255,255,0.2);
+      color: #fff;
     }
   </style>
 </head>
 <body>
-<div class="app">
-  <div class="hdr">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <div>
-        <p id="date-label" style="font-size:12px;color:var(--muted);text-transform:capitalize;font-weight:300"></p>
-        <h1 id="greeting">Bonjour 👋</h1>
+  <div class="app">
+    <!-- Header -->
+    <div class="hdr">
+      <h1>Dashboard</h1>
+      <p>Bienvenue, <span id="user-name">Nico</span> 👋</p>
+    </div>
+
+    <!-- Page Content -->
+    <div class="page">
+      <!-- Streak Card -->
+      <div class="streak-card">
+        <div class="streak-title">Streak couple</div>
+        <div class="streak-days" id="streak-days">0</div>
+        <div class="streak-label">jours</div>
+        <div class="streak-record">
+          <span>🌱 C'est parti</span>
+          <span class="badge">Record: <span id="best-streak">0</span> jours</span>
+        </div>
       </div>
-      <button onclick="logout()" class="logout-btn">⎋</button>
+
+      <!-- Quick Stats Grid -->
+      <div class="quick-grid">
+        <div class="qcard repas" onclick="window.location.href='repas.html'">
+          <span class="qcard-emoji">🥗</span>
+          <div class="qcard-val" id="meal-count">0</div>
+          <div class="qcard-label">Repas</div>
+        </div>
+        <div class="qcard defis" onclick="window.location.href='sport.html'">
+          <span class="qcard-emoji">⚡</span>
+          <div class="qcard-val" id="challenge-count">0/0</div>
+          <div class="qcard-label">Défis</div>
+        </div>
+        <div class="qcard passages" onclick="window.location.href='caca.html'">
+          <span class="qcard-emoji">💩</span>
+          <div class="qcard-val" id="poop-count">0</div>
+          <div class="qcard-label">Passages</div>
+        </div>
+        <div class="qcard objectifs" onclick="window.location.href='objectifs.html'">
+          <span class="qcard-emoji">🎯</span>
+          <div class="qcard-val" id="goal-percent">0%</div>
+          <div class="qcard-label">Objectifs</div>
+        </div>
+      </div>
+
+      <!-- Dynamic Sections (will be populated by JS) -->
+      <div id="dynamic-sections">
+        <!-- Sections will be inserted here by renderDashboard() -->
+      </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="nav">
+      <a href="index.html" class="active">
+        <span class="ni">🏠</span>
+        <span class="nl">Accueil</span>
+      </a>
+      <a href="repas.html">
+        <span class="ni">🍽️</span>
+        <span class="nl">Repas</span>
+      </a>
+      <a href="sport.html">
+        <span class="ni">⚡</span>
+        <span class="nl">Sport</span>
+      </a>
+      <a href="objectifs.html">
+        <span class="ni">🎯</span>
+        <span class="nl">Objectifs</span>
+      </a>
+      <a href="caca.html">
+        <span class="ni">💩</span>
+        <span class="nl">Journal</span>
+      </a>
     </div>
   </div>
 
-  <div class="page" id="content">
-    <div class="loading">
-      <span>✨</span>
-      <span>Chargement de votre journée…</span>
-    </div>
-  </div>
-</div>
+  <script>
+    // Variables globales
+    const BRISTOL_EMOJI = {
+      1: "💩", 2: "💩", 3: "💩", 4: "💩", 5: "💩", 6: "💩", 7: "💩"
+    };
+    const SCORE_BADGE = {
+      "excellent": "b-green",
+      "bon": "b-teal",
+      "moyen": "b-amber",
+      "mauvais": "b-coral"
+    };
 
-<nav class="nav">
-  <a href="index.html" class="active">
-    <span class="ni">🏠</span><span class="nl">Home</span><div class="nd"></div>
-  </a>
-  <a href="repas.html"><span class="ni">📅</span><span class="nl">Repas</span></a>
-  <a href="sport.html"><span class="ni">⚡</span><span class="nl">Sport</span></a>
-  <a href="caca.html"><span class="ni">💩</span><span class="nl">Caca</span></a>
-  <a href="objectifs.html"><span class="ni">🎯</span><span class="nl">Objectifs</span></a>
-</nav>
+    // Fonction pour récupérer le profil
+    async function getProfile(userId) {
+      const { data } = await db.from('profiles').select('*').eq('id', userId).single();
+      return data;
+    }
 
-<script>
-const SCORE_BADGE = {'A+':'b-green','A':'b-teal','B':'b-amber','C':'b-coral','D':'b-coral'}
+    // Fonction pour récupérer le partenaire
+    async function getPartner(userId) {
+      const { data } = await db.from('profiles').select('*').neq('id', userId).limit(1).single();
+      return data;
+    }
 
-async function logout() { await db.auth.signOut(); window.location.href = 'login.html' }
+    // Fonction pour récupérer le couple
+    async function getCouple(userId) {
+      const { data } = await db.from('couples').select('*').or(`user1_id.eq.${userId},user2_id.eq.${userId}`).single();
+      return data;
+    }
 
-async function init() {
-  const { data: { session } } = await db.auth.getSession()
-  if (!session) { window.location.replace('login.html'); return }
-  const { data: profile } = await db.from('profiles').select('*').eq('id', session.user.id).single()
-  if (!profile) { await db.auth.signOut(); window.location.replace('login.html'); return }
+    // Fonction pour récupérer ou créer un streak
+    async function getOrCreateStreak(coupleId) {
+      const { data } = await db.from('streaks').select('*').eq('couple_id', coupleId).maybeSingle();
+      if (data) return data;
+      const s = { couple_id: coupleId, current_streak: 0, best_streak: 0, last_active_date: new Date().toISOString().split('T')[0] };
+      await db.from('streaks').insert(s);
+      return s;
+    }
 
-  const now = new Date()
-  document.getElementById('date-label').textContent = now.toLocaleDateString('fr-FR', { weekday:'long', day:'numeric', month:'long' })
-  document.getElementById('greeting').innerHTML = `Bonjour <span class="grad-text">${profile.name}</span> 👋`
+    // Fonction pour afficher le dashboard
+    function renderDashboard(profile, partner, couple, meals, challenges, poop, streak) {
+      // Mettre à jour le nom de l'utilisateur
+      document.getElementById('user-name').textContent = profile.name || "Nico";
 
-  const today = now.toISOString().split('T')[0]
+      // Mettre à jour le streak
+      document.getElementById('streak-days').textContent = streak.current_streak;
+      document.getElementById('best-streak').textContent = streak.best_streak;
 
-  const [mealsRes, challengesRes, poopRes, objRes, streakRes, partnerRes] = await Promise.all([
-    db.from('meals').select('*').eq('date', today).eq('couple_id', profile.couple_id),
-    db.from('challenges').select('*, challenge_progress(*)').eq('challenge_date', today).eq('couple_id', profile.couple_id),
-    db.from('poop_logs').select('*, profiles(name)').eq('couple_id', profile.couple_id).order('logged_at', {ascending:false}).limit(3),
-    db.from('objectives').select('*').eq('couple_id', profile.couple_id).eq('completed', false),
-    getOrCreateStreak(profile.couple_id),
-    db.from('profiles').select('*').eq('couple_id', profile.couple_id).neq('id', profile.id).maybeSingle(),
-  ])
+      // Mettre à jour les quick stats
+      document.getElementById('meal-count').textContent = meals.length;
+      document.getElementById('challenge-count').textContent = `${challenges.filter(c => c.completed).length}/${challenges.length}`;
+      document.getElementById('poop-count').textContent = poop.length;
+      document.getElementById('goal-percent').textContent = `${Math.round((challenges.filter(c => c.completed).length / challenges.length) * 100)}%`;
 
-  const meals = mealsRes.data || []
-  const challenges = challengesRes.data || []
-  const poop = poopRes.data || []
-  const objectives = objRes.data || []
-  const streak = streakRes
-  const partner = partnerRes.data
+      // Rendre les sections dynamiques
+      const dynamicSections = document.getElementById('dynamic-sections');
+      dynamicSections.innerHTML = '';
 
-  const challengesDone = challenges.filter(c => c.challenge_progress?.some(p => p.user_id === profile.id && p.completed)).length
-  const myTodayPoop = poop.filter(p => p.user_id === profile.id && p.logged_at.startsWith(today)).length
-  const objPct = objectives.length ? Math.round(objectives.reduce((s,o) => s + Math.min(100, o.current_value/o.target*100), 0) / objectives.length) : 0
-
-  const streakEmoji = streak.current_streak >= 7 ? '🔥' : streak.current_streak >= 3 ? '⚡' : '🌱'
-  const streakLabel = streak.current_streak >= 7 ? 'En feu !' : streak.current_streak >= 3 ? 'Belle lancée' : 'C\'est parti'
-
-  const bars = Array.from({length:7}, (_,i) => {
-    const filled = i < Math.min(7, streak.current_streak)
-    return `<div style="flex:1;height:5px;border-radius:3px;background:${filled?'rgba(255,255,255,.75)':'rgba(255,255,255,.15)'};transition:background .3s ${i*0.05}s"></div>`
-  }).join('')
-
-  document.getElementById('content').innerHTML = `
-
-    <!-- STREAK HERO -->
-    <div class="streak" style="animation:slideUp .4s ease">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;position:relative;z-index:1">
-        <div>
-          <div style="font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;opacity:.6;margin-bottom:8px">Streak couple</div>
-          <div style="display:flex;align-items:baseline;gap:8px">
-            <div class="hero-num">${streak.current_streak}</div>
-            <div style="font-size:14px;opacity:.7;font-weight:300">jours</div>
+      // Section Repas
+      if (meals.length > 0) {
+        dynamicSections.innerHTML += `
+          <div class="section-row meal-section" onclick="window.location.href='repas.html'">
+            <span class="section-title">Derniers repas</span>
+            <a href="repas.html" class="section-link">Voir tout →</a>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;margin-top:12px">
-            ${partner ? `
-              <div class="av" style="width:28px;height:28px;font-size:10px;background:rgba(255,255,255,.25)">${profile.name[0]}</div>
-              <div class="av" style="width:28px;height:28px;font-size:10px;background:rgba(255,255,255,.18)">${partner.name[0]}</div>
-            ` : `<div class="av" style="width:28px;height:28px;font-size:10px;background:rgba(255,255,255,.25)">${profile.name[0]}</div>`}
-            <span style="font-size:12px;opacity:.8">${streakEmoji} ${streakLabel}</span>
+          <div class="card">
+            ${meals.map(m => `
+              <div class="row-item">
+                <div class="av ${m.user_id === profile.id ? 'av-a' : 'av-b'}" style="font-size:10px">${m.profiles?.name?.[0]||'?'}</div>
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:500">${m.name}</div>
+                  <div style="font-size:11px;color:var(--muted)">${new Date(m.date).toLocaleDateString('fr-FR')}</div>
+                </div>
+                <span class="badge b-purple">${m.type}</span>
+              </div>
+            `).join('')}
           </div>
-        </div>
-        <div style="text-align:right">
-          <div style="font-size:10px;opacity:.5;font-weight:600;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">Record</div>
-          <div style="font-family:'Bricolage Grotesque',sans-serif;font-size:32px;font-weight:800;opacity:.75;letter-spacing:-1px">${streak.best_streak}</div>
-        </div>
-      </div>
-      <div style="display:flex;gap:5px;margin-top:16px;position:relative;z-index:1">${bars}</div>
-    </div>
+        `;
+      }
 
-    <!-- QUICK STATS -->
-    <div class="quick-grid">
-      <div class="qcard purple" style="animation-delay:.05s">
-        <span class="qcard-emoji">🥗</span>
-        <div class="qcard-val" style="color:var(--purple)">${meals.length}</div>
-        <div class="qcard-label">Repas</div>
-      </div>
-      <div class="qcard pink" style="animation-delay:.1s">
-        <span class="qcard-emoji">⚡</span>
-        <div class="qcard-val" style="color:var(--pink)">${challengesDone}<span style="font-size:16px;opacity:.4">/${challenges.length}</span></div>
-        <div class="qcard-label">Défis</div>
-      </div>
-      <div class="qcard amber" style="animation-delay:.15s">
-        <span class="qcard-emoji">💩</span>
-        <div class="qcard-val" style="color:var(--amber)">${myTodayPoop}</div>
-        <div class="qcard-label">Passages</div>
-      </div>
-      <div class="qcard coral" style="animation-delay:.2s">
-        <span class="qcard-emoji">🎯</span>
-        <div class="qcard-val" style="color:var(--coral)">${objPct}<span style="font-size:16px;opacity:.4">%</span></div>
-        <div class="qcard-label">Objectifs</div>
-      </div>
-    </div>
+      // Section Défis
+      if (challenges.length > 0) {
+        dynamicSections.innerHTML += `
+          <div class="section-row challenge-section" onclick="window.location.href='sport.html'">
+            <span class="section-title">Défis en cours</span>
+            <a href="sport.html" class="section-link">Voir tout →</a>
+          </div>
+          <div class="card">
+            ${challenges.map(c => `
+              <div class="row-item">
+                <div class="av ${c.user_id === profile.id ? 'av-a' : 'av-b'}" style="font-size:10px">${c.profiles?.name?.[0]||'?'}</div>
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:500">${c.name}</div>
+                  <div style="font-size:11px;color:var(--muted)">${c.completed ? '✅ Terminé' : '⏳ En cours'}</div>
+                </div>
+                <span class="badge ${c.completed ? 'b-green' : 'b-gray'}">${c.completed ? 'Terminé' : 'En attente'}</span>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
 
-    ${challenges.length ? `
-    <div class="section-row" style="animation:slideUp .3s .25s ease both">
-      <span class="section-title">Défis du jour</span>
-      <a href="sport.html" class="section-link">Voir tout →</a>
-    </div>
-    ${challenges.slice(0,2).map((c,i) => {
-      const myP = c.challenge_progress?.find(p => p.user_id === profile.id)
-      const pct = c.target > 0 ? Math.min(100, Math.round(((myP?.value||0)/c.target)*100)) : 0
-      const done = myP?.completed
-      return `<div class="challenge-card ${done?'done':''}" style="animation-delay:${.3+i*.05}s">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-          <span style="font-size:14px;font-weight:600;flex:1;padding-right:10px">${c.title}</span>
-          <span class="badge ${done?'b-green':'b-amber'}">${done?'✓ Fait':'En cours'}</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:8px">
-          <span>${myP?.value||0} / ${c.target} ${c.unit}</span>
-          <span style="font-weight:600;color:${done?'var(--green)':'var(--purple)'}">${pct}%</span>
-        </div>
-        <div class="prog">
-          <div class="prog-fill" style="width:${pct}%;background:${done?'linear-gradient(90deg,var(--green),var(--green-l))':'linear-gradient(90deg,var(--purple),var(--purple-l))'}"></div>
-        </div>
-      </div>`
-    }).join('')}` : ''}
+      // Section Passages
+      if (poop.length > 0) {
+        dynamicSections.innerHTML += `
+          <div class="section-row poop-section" onclick="window.location.href='caca.html'">
+            <span class="section-title">Dernier passage</span>
+            <a href="caca.html" class="section-link">Journal →</a>
+          </div>
+          <div class="card">
+            <div class="row-item">
+              <div class="av ${poop[0].user_id === profile.id ? 'av-a' : 'av-b'}" style="font-size:10px">${poop[0].profiles?.name?.[0]||'?'}</div>
+              <div style="flex:1">
+                <div style="font-size:13px;font-weight:500">${BRISTOL_EMOJI[poop[0].bristol_type]} Type ${poop[0].bristol_type}</div>
+                <div style="font-size:11px;color:var(--muted)">${new Date(poop[0].logged_at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</div>
+              </div>
+              <span class="badge ${SCORE_BADGE[poop[0].score]||'b-gray'}">${poop[0].score}</span>
+            </div>
+          </div>
+        `;
+      }
 
-    ${meals.length ? `
-    <div class="section-row" style="animation:slideUp .3s .35s ease both">
-      <span class="section-title">Repas du jour</span>
-      <a href="repas.html" class="section-link">Voir tout →</a>
-    </div>
-    <div class="card" style="animation-delay:.4s">
-      ${meals.slice(0,4).map(m => `
-      <div class="meal-row">
-        <div class="udot ${m.user_id === profile.id ? 'dot-a' : 'dot-n'}" style="width:6px;height:6px"></div>
-        <span style="font-size:13px;flex:1">${m.name}</span>
-        <span style="font-size:11px;color:var(--muted)">${m.user_id===profile.id?profile.name:(partner?.name||'')}</span>
-      </div>`).join('')}
-    </div>` : ''}
+      // Message si aucune donnée
+      if (meals.length === 0 && challenges.length === 0 && poop.length === 0) {
+        dynamicSections.innerHTML += `
+          <div class="empty" style="margin-top:20px;animation:slideUp .5s .3s ease both">
+            <div class="empty-i">🚀</div>
+            <p style="font-weight:600;color:var(--text);font-size:16px">Commencez votre journée !</p>
+            <p style="font-size:13px;margin-top:6px;line-height:1.5">Ajoutez un repas ou créez<br>un défi sport ensemble</p>
+          </div>
+        `;
+      }
+    }
 
-    ${poop.length ? `
-    <div class="section-row" style="animation:slideUp .3s .45s ease both">
-      <span class="section-title">Dernier passage</span>
-      <a href="caca.html" class="section-link">Journal →</a>
-    </div>
-    <div class="card" style="animation-delay:.5s">
-      <div class="row-item" style="padding-top:0">
-        <div class="av ${poop[0].user_id === profile.id ? 'av-a' : 'av-b'}" style="font-size:10px">${poop[0].profiles?.name?.[0]||'?'}</div>
-        <div style="flex:1">
-          <div style="font-size:13px;font-weight:500">${BRISTOL_EMOJI[poop[0].bristol_type]} Type ${poop[0].bristol_type}</div>
-          <div style="font-size:11px;color:var(--muted)">${new Date(poop[0].logged_at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</div>
-        </div>
-        <span class="badge ${SCORE_BADGE[poop[0].score]||'b-gray'}">${poop[0].score}</span>
-      </div>
-    </div>` : ''}
+    // Fonction d'initialisation
+    async function init() {
+      try {
+        const { data: { user } } = await db.auth.getUser();
+        if (!user) { window.location.href = "login.html"; return; }
 
-    ${meals.length === 0 && challenges.length === 0 ? `
-    <div class="empty" style="margin-top:20px;animation:slideUp .5s .3s ease both;opacity:0;animation-fill-mode:both">
-      <div class="empty-i">🚀</div>
-      <p style="font-weight:600;color:var(--text);font-size:16px">Commencez votre journée !</p>
-      <p style="font-size:13px;margin-top:6px;line-height:1.5">Ajoutez un repas ou créez<br>un défi sport ensemble</p>
-    </div>` : ''}
-  `
-}
+        const profile = await getProfile(user.id);
+        const partner = await getPartner(user.id);
+        const couple = await getCouple(user.id);
+        if (!couple) { window.location.href = "login.html"; return; }
 
-async function getOrCreateStreak(coupleId) {
-  const { data } = await db.from('streaks').select('*').eq('couple_id', coupleId).maybeSingle()
-  if (data) return data
-  const s = { couple_id: coupleId, current_streak: 0, best_streak: 0, last_active_date: new Date().toISOString().split('T')[0] }
-  await db.from('streaks').insert(s)
-  return s
-}
+        // Charger les données en parallèle
+        const [meals, challenges, poop, streak] = await Promise.all([
+          db.from('meals').select('*, profiles(name)').eq('couple_id', couple.id).order('date', { ascending: false }).limit(3),
+          db.from('challenges').select('*, profiles(name)').eq('couple_id', couple.id).order('created_at', { ascending: false }).limit(3),
+          db.from('poop').select('*, profiles(name)').eq('couple_id', couple.id).order('logged_at', { ascending: false }).limit(1),
+          getOrCreateStreak(couple.id)
+        ]);
 
-init()
-</script>
+        // Afficher les données
+        renderDashboard(profile, partner, couple, meals, challenges, poop, streak);
+
+      } catch (error) {
+        console.error("Erreur lors du chargement des données :", error);
+        document.querySelector('.page').innerHTML = `
+          <div class="empty">
+            <div class="empty-i">⚠️</div>
+            <p style="font-weight:600;color:var(--coral);font-size:16px">Erreur de chargement</p>
+            <p style="font-size:13px;margin-top:6px;line-height:1.5">Impossible de charger les données. Vérifie ta connexion ou rafraîchis la page.</p>
+            <button class="btn btn-p" onclick="location.reload()">Rafraîchir</button>
+          </div>
+        `;
+      }
+    }
+
+    // Démarrer l'application
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
 </body>
 </html>
