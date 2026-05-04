@@ -10,39 +10,47 @@ const db = createClient(SUPABASE_URL, SUPABASE_ANON, {
     persistSession: true,
     detectSessionInUrl: true,
     autoRefreshToken: true,
+    storageKey: 'fitcouple-auth',
   }
 })
-
-// ---- Helpers auth ----
-async function getUser() {
-  const { data: { user } } = await db.auth.getUser()
-  return user
-}
 
 async function getProfile(userId) {
   const { data } = await db.from('profiles').select('*').eq('id', userId).single()
   return data
 }
 
-// Utilise getSession() (lecture du localStorage, instantané)
-// plutôt que getUser() qui fait un appel réseau et peut arriver
-// avant que la session soit restaurée → boucle de redirections
-async function requireAuth() {
-  const { data: { session } } = await db.auth.getSession()
+// Attend que Supabase restaure la session via onAuthStateChange
+// C'est la seule méthode fiable — getSession/getUser peuvent
+// retourner null avant que le token soit restauré depuis localStorage
+function requireAuth() {
+  return new Promise((resolve) => {
+    const timeout = setTimeout(() => {
+      window.location.replace('login.html')
+    }, 5000)
 
-  if (!session) {
-    window.location.href = 'login.html'
-    return null
-  }
+    const { data: { subscription } } = db.auth.onAuthStateChange(async (event, session) => {
+      if (!session) {
+        if (event === 'SIGNED_OUT' || event === 'INITIAL_SESSION') {
+          clearTimeout(timeout)
+          subscription.unsubscribe()
+          window.location.replace('login.html')
+        }
+        return
+      }
 
-  const profile = await getProfile(session.user.id)
-  if (!profile) {
-    await db.auth.signOut()
-    window.location.href = 'login.html'
-    return null
-  }
+      clearTimeout(timeout)
+      subscription.unsubscribe()
 
-  return { user: session.user, profile }
+      const profile = await getProfile(session.user.id)
+      if (!profile) {
+        await db.auth.signOut()
+        window.location.replace('login.html')
+        return
+      }
+
+      resolve({ user: session.user, profile })
+    })
+  })
 }
 
 // ---- Bristol ----

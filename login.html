@@ -55,11 +55,14 @@
 </div>
 
 <script>
-  // Vérifie si déjà connecté — une seule fois au chargement
-  let redirecting = false
-  db.auth.getSession().then(({ data: { session } }) => {
-    if (session && !redirecting) {
-      redirecting = true
+  let busy = false
+
+  // Si déjà connecté → index directement
+  // On écoute onAuthStateChange UNE seule fois
+  const { data: { subscription: initSub } } = db.auth.onAuthStateChange((event, session) => {
+    initSub.unsubscribe()
+    if (session) {
+      busy = true
       window.location.replace('index.html')
     }
   })
@@ -77,48 +80,44 @@
       `<div class="alert-${type}" style="margin-bottom:14px">${msg}</div>`
   }
 
-  function setLoading(btnId, loading, label) {
-    const btn = document.getElementById(btnId)
-    btn.disabled = loading
-    btn.textContent = loading ? '...' : label
+  function setBtn(id, loading, label) {
+    const b = document.getElementById(id)
+    b.disabled = loading
+    b.textContent = loading ? '...' : label
   }
 
   async function handleLogin() {
-    if (redirecting) return
+    if (busy) return
     const email = document.getElementById('l-email').value.trim()
     const pass  = document.getElementById('l-pass').value
     if (!email || !pass) { showAlert('Remplis tous les champs.'); return }
 
-    setLoading('btn-login', true, 'Se connecter')
-    document.getElementById('alert').innerHTML = ''
+    setBtn('btn-login', true, 'Se connecter')
 
     const { data, error } = await db.auth.signInWithPassword({ email, password: pass })
 
     if (error) {
-      const msg = error.message.includes('Invalid login') || error.message.includes('invalid')
-        ? '❌ Email ou mot de passe incorrect.'
-        : error.message.includes('Email not confirmed')
-        ? '❌ Tu dois confirmer ton email avant de te connecter. Vérifie ta boîte mail.'
+      const msg = error.message.includes('Invalid') ? '❌ Email ou mot de passe incorrect.'
+        : error.message.includes('not confirmed') ? '❌ Email non confirmé — vérifie ta boîte mail.'
         : '❌ ' + error.message
       showAlert(msg)
-      setLoading('btn-login', false, 'Se connecter')
+      setBtn('btn-login', false, 'Se connecter')
       return
     }
 
     if (!data.session) {
-      showAlert('❌ Connexion échouée — pas de session retournée.')
-      setLoading('btn-login', false, 'Se connecter')
+      showAlert('❌ Connexion échouée — réessaie.')
+      setBtn('btn-login', false, 'Se connecter')
       return
     }
 
-    // Succès
-    redirecting = true
-    showAlert('✅ Connecté ! Redirection...', 'ok')
+    busy = true
+    showAlert('✅ Connecté !', 'ok')
     window.location.replace('index.html')
   }
 
   async function handleSignup() {
-    if (redirecting) return
+    if (busy) return
     const name     = document.getElementById('s-name').value.trim()
     const coupleId = document.getElementById('s-couple').value.trim().toLowerCase()
     const email    = document.getElementById('s-email').value.trim()
@@ -127,47 +126,34 @@
     if (!name || !coupleId || !email || !pass) { showAlert('Remplis tous les champs.'); return }
     if (pass.length < 6) { showAlert('❌ Mot de passe trop court (6 caractères min).'); return }
 
-    setLoading('btn-signup', true, 'Créer mon compte')
-    document.getElementById('alert').innerHTML = ''
+    setBtn('btn-signup', true, 'Créer mon compte')
 
     const { data, error } = await db.auth.signUp({ email, password: pass })
 
     if (error) {
       showAlert('❌ ' + error.message)
-      setLoading('btn-signup', false, 'Créer mon compte')
+      setBtn('btn-signup', false, 'Créer mon compte')
       return
     }
 
     const userId = data.user?.id
     if (!userId) {
-      // Supabase a renvoyé un user null → confirmation email requise
-      showAlert('✅ Vérifie ton email pour confirmer ton compte, puis connecte-toi.', 'ok')
+      showAlert('✅ Vérifie ton email pour confirmer, puis connecte-toi.', 'ok')
       switchMode('login')
-      setLoading('btn-signup', false, 'Créer mon compte')
+      setBtn('btn-signup', false, 'Créer mon compte')
       return
     }
 
-    // Crée le profil
-    const { error: profileError } = await db.from('profiles').insert({
-      id: userId, name, couple_id: coupleId, color: 'green'
-    })
-
-    if (profileError && !profileError.message.includes('duplicate')) {
-      showAlert('⚠️ Compte créé mais erreur profil : ' + profileError.message)
-      setLoading('btn-signup', false, 'Créer mon compte')
-      return
-    }
+    await db.from('profiles').insert({ id: userId, name, couple_id: coupleId, color: 'green' })
 
     if (data.session) {
-      // Confirmation email désactivée → connecté direct
-      redirecting = true
-      showAlert('✅ Compte créé ! Redirection...', 'ok')
+      busy = true
+      showAlert('✅ Compte créé !', 'ok')
       window.location.replace('index.html')
     } else {
-      // Confirmation email activée
       showAlert('✅ Compte créé ! Vérifie ton email puis connecte-toi.', 'ok')
       switchMode('login')
-      setLoading('btn-signup', false, 'Créer mon compte')
+      setBtn('btn-signup', false, 'Créer mon compte')
     }
   }
 </script>
