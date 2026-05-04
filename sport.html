@@ -10,7 +10,10 @@
 </head>
 <body>
 <div class="app">
-  <div class="hdr"><h1>Sport ⚡</h1><p>Défis &amp; performances</p></div>
+  <div class="hdr" style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div><h1>Sport ⚡</h1><p>Défis &amp; performances</p></div>
+      <button onclick="logout()" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--muted);padding:4px 0;margin-top:6px">Déconnexion</button>
+    </div>
   <div class="page" style="padding-bottom:80px;">
     <div id="date-scroll" class="datescroll"></div>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
@@ -177,11 +180,13 @@ async function addChallenge(e) {
   await loadChallenges()
 }
 
+async function logout() {
+  await db.auth.signOut();
+  window.location.replace('login.html');
+}
+
 async function init() {
-  const { data: { session } } = await db.auth.getSession()
-  if (!session) { window.location.replace('login.html'); return }
-  const { data: p } = await db.from('profiles').select('*').eq('id', session.user.id).single()
-  if (!p) { await db.auth.signOut(); window.location.replace('login.html'); return }
+  const { user, profile: p } = await requireAuth();
   profile = p
   const { data } = await db.from('profiles').select('*').eq('couple_id', profile.couple_id).neq('id', profile.id).maybeSingle()
   partner = data
