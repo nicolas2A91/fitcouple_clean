@@ -17,7 +17,7 @@
 </div>
 
 <nav class="nav">
-  <a href="index.html"><span class="ni">🏠</span><span class="nl">Accueil</span></a>
+  <a href="index.html"><span class="ni">🏠</span><span class="nl">Dashboard</span></a>
   <a href="repas.html" class="active"><span class="ni">🍽️</span><span class="nl">Repas</span><div class="nd"></div></a>
   <a href="sport.html"><span class="ni">⚡</span><span class="nl">Sport</span></a>
   <a href="objectifs.html"><span class="ni">🎯</span><span class="nl">Objectifs</span></a>
@@ -39,7 +39,8 @@
       </select>
     </div>
     <div class="ig"><label>Qu'est-ce que tu as mangé ?</label><input class="inp" id="m-name" placeholder="Salade césar, sushi, pizza..."></div>
-    <div class="ig" style="margin-bottom:20px"><label>Notes (optionnel)</label><input class="inp" id="m-notes" placeholder="Fait maison, resto..."></div>
+    <div class="ig"><label>Notes (optionnel)</label><input class="inp" id="m-notes" placeholder="Fait maison, resto..."></div>
+    <div class="ig" style="margin-bottom:20px"><label>Calories (optionnel)</label><input class="inp" id="m-calories" type="number" min="0" placeholder="ex: 650"></div>
     <button class="btn btn-p" id="m-btn" onclick="saveMeal()">Ajouter 🍽️</button>
     <button class="btn btn-g" style="margin-top:8px" onclick="document.getElementById('modal').classList.remove('open')">Annuler</button>
   </div>
@@ -75,17 +76,19 @@ function openAddModal() {
   document.getElementById('modal-title').textContent = 'Ajouter un repas'
   document.getElementById('m-name').value = ''
   document.getElementById('m-notes').value = ''
+  document.getElementById('m-calories').value = ''
   document.getElementById('m-type').value = 'dejeuner'
   document.getElementById('m-btn').textContent = 'Ajouter 🍽️'
   document.getElementById('modal').classList.add('open')
 }
 
-function openEditModal(id, type, name, notes) {
+function openEditModal(id, type, name, notes, calories) {
   editingId = id
   document.getElementById('modal-title').textContent = 'Modifier le repas'
   document.getElementById('m-type').value = type
   document.getElementById('m-name').value = name
   document.getElementById('m-notes').value = notes || ''
+  document.getElementById('m-calories').value = calories || ''
   document.getElementById('m-btn').textContent = 'Enregistrer ✏️'
   document.getElementById('modal').classList.add('open')
 }
@@ -99,7 +102,8 @@ async function saveMeal() {
   const payload = {
     meal_type: document.getElementById('m-type').value,
     name,
-    notes: document.getElementById('m-notes').value || null
+    notes: document.getElementById('m-notes').value || null,
+    calories: document.getElementById('m-calories').value ? +document.getElementById('m-calories').value : null
   }
 
   let error
@@ -203,10 +207,10 @@ async function loadMeals() {
             <div class="udot ${m.user_id===profile.id?'dot-a':'dot-n'}"></div>
             <div style="flex:1">
               <div style="font-size:13px">${m.name}</div>
-              <div style="font-size:11px;color:var(--muted)">${m.profiles?.name||''}${m.notes?' · '+m.notes:''}</div>
+              <div style="font-size:11px;color:var(--muted)">${m.profiles?.name||''}${m.notes?' · '+m.notes:''}${m.calories?' · '+m.calories+' kcal':''}</div>
             </div>
             ${m.user_id===profile.id ? `
-              <button onclick="openEditModal('${m.id}','${m.meal_type}',${JSON.stringify(m.name)},${JSON.stringify(m.notes||'')})"
+              <button onclick="openEditModal('${m.id}','${m.meal_type}',${JSON.stringify(m.name)},${JSON.stringify(m.notes||'')},${m.calories||''})"
                 style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;padding:0 6px">✏️</button>
               <button onclick="deleteMeal('${m.id}')"
                 style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;padding:0 4px">🗑️</button>
