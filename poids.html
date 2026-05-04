@@ -146,7 +146,7 @@
 <div class="overlay" id="modal" onclick="closeModal(event)">
   <div class="modal">
     <div class="mhandle"></div>
-    <div class="mtitle">Ajouter mon poids ⚖️</div>
+    <div class="mtitle" id="modal-title">Ajouter mon poids ⚖️</div>
     <div class="ig">
       <label>Poids (kg)</label>
       <input class="inp" id="w-value" type="number" step="0.1" min="30" max="250" placeholder="ex: 72.5">
@@ -155,6 +155,7 @@
       <label>Date</label>
       <input class="inp" id="w-date" type="date">
     </div>
+    <input type="hidden" id="w-edit-id">
     <button class="btn btn-p" id="w-btn" onclick="saveWeight()">Enregistrer ⚖️</button>
     <button class="btn btn-g" style="margin-top:8px" onclick="document.getElementById('modal').classList.remove('open')">Annuler</button>
   </div>
@@ -170,9 +171,12 @@ function closeModal(e) {
   if (e.target === document.getElementById('modal')) document.getElementById('modal').classList.remove('open')
 }
 
-function openModal() {
-  document.getElementById('w-value').value = ''
-  document.getElementById('w-date').value = new Date().toISOString().split('T')[0]
+function openModal(editEntry = null) {
+  document.getElementById('w-edit-id').value = editEntry ? editEntry.id : ''
+  document.getElementById('w-value').value = editEntry ? editEntry.weight : ''
+  document.getElementById('w-date').value = editEntry ? editEntry.date : new Date().toISOString().split('T')[0]
+  document.getElementById('modal-title').textContent = editEntry ? 'Modifier le poids ✏️' : 'Ajouter mon poids ⚖️'
+  document.getElementById('w-btn').textContent = editEntry ? 'Mettre à jour ✏️' : 'Enregistrer ⚖️'
   document.getElementById('modal').classList.add('open')
 }
 
@@ -201,7 +205,6 @@ function render() {
   const myData = filterByRange(allMyWeights)
   const parData = filterByRange(allPartnerWeights)
 
-  // Stats (always "me" for stats)
   const statsData = currentView === 'partner' ? parData : myData
   if (statsData.length > 0) {
     const cur = statsData[statsData.length - 1].weight
@@ -220,17 +223,26 @@ function render() {
     document.getElementById('stat-delta').style.color = 'var(--muted)'
   }
 
-  // Chart
   buildChart(myData, parData)
-
-  // History
   buildHistory(currentView === 'partner' ? parData : myData, currentView === 'partner')
 }
 
-function buildChart(myData, parData) {
-  const ctx = document.getElementById('weightChart').getContext('2d')
+function makeGradient(ctx, color) {
+  const gradient = ctx.createLinearGradient(0, 0, 0, 200)
+  gradient.addColorStop(0, color.replace(')', ', 0.35)').replace('rgb', 'rgba'))
+  gradient.addColorStop(1, color.replace(')', ', 0.0)').replace('rgb', 'rgba'))
+  return gradient
+}
 
-  // Gather all dates
+function buildChart(myData, parData) {
+  // Re-create canvas if it was replaced
+  const wrap = document.querySelector('.chart-wrap')
+  if (!wrap.querySelector('canvas')) {
+    wrap.innerHTML = '<canvas id="weightChart"></canvas>'
+  }
+  const canvas = document.getElementById('weightChart')
+  const ctx = canvas.getContext('2d')
+
   const allDates = [...new Set([
     ...myData.map(e => e.date),
     ...parData.map(e => e.date)
@@ -242,29 +254,43 @@ function buildChart(myData, parData) {
   const datasets = []
 
   if (currentView !== 'partner' && myData.length > 0) {
+    const gradGreen = ctx.createLinearGradient(0, 0, 0, 180)
+    gradGreen.addColorStop(0, 'rgba(99,153,34,0.28)')
+    gradGreen.addColorStop(1, 'rgba(99,153,34,0.0)')
     datasets.push({
       label: profile?.name || 'Moi',
       data: allDates.map(d => myMap[d] ?? null),
       borderColor: '#639922',
-      backgroundColor: 'rgba(99,153,34,0.1)',
-      tension: 0.3,
+      borderWidth: 2.5,
+      backgroundColor: gradGreen,
+      tension: 0.4,
       spanGaps: true,
-      pointRadius: 4,
-      pointBackgroundColor: '#639922',
+      pointRadius: 5,
+      pointHoverRadius: 8,
+      pointBackgroundColor: '#fff',
+      pointBorderColor: '#639922',
+      pointBorderWidth: 2.5,
       fill: true,
     })
   }
 
   if (currentView !== 'me' && parData.length > 0) {
+    const gradPurple = ctx.createLinearGradient(0, 0, 0, 180)
+    gradPurple.addColorStop(0, 'rgba(127,119,221,0.28)')
+    gradPurple.addColorStop(1, 'rgba(127,119,221,0.0)')
     datasets.push({
       label: partner?.name || 'Partenaire',
       data: allDates.map(d => parMap[d] ?? null),
       borderColor: '#7F77DD',
-      backgroundColor: 'rgba(127,119,221,0.1)',
-      tension: 0.3,
+      borderWidth: 2.5,
+      backgroundColor: gradPurple,
+      tension: 0.4,
       spanGaps: true,
-      pointRadius: 4,
-      pointBackgroundColor: '#7F77DD',
+      pointRadius: 5,
+      pointHoverRadius: 8,
+      pointBackgroundColor: '#fff',
+      pointBorderColor: '#7F77DD',
+      pointBorderWidth: 2.5,
       fill: true,
     })
   }
@@ -272,10 +298,14 @@ function buildChart(myData, parData) {
   if (chart) chart.destroy()
 
   if (datasets.length === 0 || allDates.length === 0) {
-    document.getElementById('weightChart').parentElement.innerHTML =
-      '<div style="height:180px;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--muted)">Pas encore de données sur cette période</div>'
+    wrap.innerHTML = '<div style="height:180px;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--muted)">Pas encore de données sur cette période</div>'
     return
   }
+
+  // Compute y-axis min/max with padding
+  const allVals = datasets.flatMap(ds => ds.data.filter(v => v !== null))
+  const yMin = Math.floor(Math.min(...allVals) - 1)
+  const yMax = Math.ceil(Math.max(...allVals) + 1)
 
   chart = new Chart(ctx, {
     type: 'line',
@@ -289,22 +319,48 @@ function buildChart(myData, parData) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { display: currentView === 'both', labels: { font: { size: 11 }, boxWidth: 12 } },
+        legend: {
+          display: currentView === 'both',
+          labels: {
+            font: { size: 11, weight: '600' },
+            boxWidth: 10,
+            boxHeight: 10,
+            usePointStyle: true,
+            pointStyle: 'circle',
+            padding: 16
+          }
+        },
         tooltip: {
+          backgroundColor: 'rgba(20,20,30,0.85)',
+          titleFont: { size: 11, weight: '600' },
+          bodyFont: { size: 13, weight: '700' },
+          padding: 10,
+          cornerRadius: 10,
+          displayColors: currentView === 'both',
           callbacks: {
-            label: ctx => ` ${ctx.parsed.y} kg`
+            label: ctx => ` ${ctx.dataset.label} : ${ctx.parsed.y} kg`
           }
         }
       },
       scales: {
         x: {
-          ticks: { font: { size: 10 }, maxTicksLimit: 6 },
-          grid: { display: false }
+          ticks: { font: { size: 10 }, maxTicksLimit: 6, color: '#999' },
+          grid: { display: false },
+          border: { display: false }
         },
         y: {
-          ticks: { font: { size: 10 }, callback: v => v + ' kg' },
-          grid: { color: 'rgba(0,0,0,0.04)' }
+          min: yMin,
+          max: yMax,
+          ticks: {
+            font: { size: 10 },
+            color: '#999',
+            callback: v => v + ' kg',
+            maxTicksLimit: 5
+          },
+          grid: { color: 'rgba(0,0,0,0.05)', drawBorder: false },
+          border: { display: false }
         }
       }
     }
@@ -329,6 +385,8 @@ function buildHistory(data, isPartner) {
 
     const dt = new Date(e.date + 'T12:00:00').toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' })
     const dotClass = isPartner ? 'av-b' : 'av-a'
+    // Serialize entry for edit button (avoid quote issues)
+    const entryJson = encodeURIComponent(JSON.stringify(e))
 
     return `<div class="weight-log-row">
       <div class="av ${dotClass}" style="font-size:10px;width:28px;height:28px">${isPartner ? (partner?.name?.[0]||'P') : (profile?.name?.[0]||'M')}</div>
@@ -338,29 +396,50 @@ function buildHistory(data, isPartner) {
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
         ${diffHtml}
-        ${!isPartner ? `<button onclick="deleteWeight('${e.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0">🗑️</button>` : ''}
+        ${!isPartner ? `
+          <div style="display:flex;gap:6px;margin-top:2px">
+            <button onclick="editWeight('${entryJson}')" style="background:none;border:none;color:var(--primary,#7F77DD);cursor:pointer;font-size:14px;padding:0" title="Modifier">✏️</button>
+            <button onclick="deleteWeight('${e.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0" title="Supprimer">🗑️</button>
+          </div>` : ''}
       </div>
     </div>`
   }).join('')
 }
 
+function editWeight(entryJson) {
+  const entry = JSON.parse(decodeURIComponent(entryJson))
+  openModal(entry)
+}
+
 async function saveWeight() {
   const val = parseFloat(document.getElementById('w-value').value)
   const date = document.getElementById('w-date').value
+  const editId = document.getElementById('w-edit-id').value
+
   if (!val || val < 20 || val > 500) { alert('Poids invalide'); return }
   if (!date) { alert('Date manquante'); return }
 
   const btn = document.getElementById('w-btn')
   btn.disabled = true; btn.textContent = '...'
 
-  const { error } = await db.from('weight_logs').insert({
-    user_id: profile.id,
-    couple_id: profile.couple_id,
-    weight: val,
-    date
-  })
+  let error
+  if (editId) {
+    // Update existing entry
+    const res = await db.from('weight_logs').update({ weight: val, date }).eq('id', editId)
+    error = res.error
+  } else {
+    // Insert new entry
+    const res = await db.from('weight_logs').insert({
+      user_id: profile.id,
+      couple_id: profile.couple_id,
+      weight: val,
+      date
+    })
+    error = res.error
+  }
 
-  btn.disabled = false; btn.textContent = 'Enregistrer ⚖️'
+  btn.disabled = false
+  btn.textContent = editId ? 'Mettre à jour ✏️' : 'Enregistrer ⚖️'
 
   if (error) { alert('Erreur : ' + error.message); return }
   document.getElementById('modal').classList.remove('open')
