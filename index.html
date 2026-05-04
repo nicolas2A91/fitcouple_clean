@@ -10,172 +10,6 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="light">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="config.js"></script>
-  <style>
-    /* Styles existants */
-    .quick-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-      margin-bottom: 16px;
-    }
-    .qcard {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--rad);
-      padding: 16px 14px;
-      box-shadow: var(--shadow-sm);
-      animation: slideUp .3s ease both;
-      position: relative;
-      overflow: hidden;
-      cursor: pointer;
-    }
-    .qcard::before {
-      content: '';
-      position: absolute;
-      top: -16px; right: -16px;
-      width: 60px; height: 60px;
-      border-radius: 50%;
-      opacity: .12;
-    }
-    .qcard.purple::before { background: var(--purple) }
-    .qcard.pink::before   { background: var(--pink) }
-    .qcard.amber::before  { background: var(--amber) }
-    .qcard.coral::before  { background: var(--coral) }
-
-    .qcard-emoji { font-size: 22px; margin-bottom: 8px; display: block }
-    .qcard-val {
-      font-family: 'Bricolage Grotesque', sans-serif;
-      font-size: 28px;
-      font-weight: 800;
-      line-height: 1;
-      letter-spacing: -1px;
-    }
-    .qcard-label {
-      font-size: 11px;
-      color: var(--muted);
-      margin-top: 4px;
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: .5px;
-    }
-
-    .section-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-    .section-title {
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--text);
-    }
-    .section-link {
-      font-size: 12px;
-      color: var(--purple);
-      text-decoration: none;
-      cursor: pointer;
-    }
-
-    /* Onglets (pour la navigation) */
-    .tabs {
-      display: flex;
-      background: var(--surface2);
-      border-radius: var(--rad-sm);
-      padding: 4px;
-      margin-bottom: 16px;
-      border: 1px solid var(--border);
-      position: sticky;
-      top: 72px; /* Hauteur du header */
-      z-index: 10;
-      backdrop-filter: blur(10px);
-    }
-    .tab {
-      flex: 1;
-      padding: 10px;
-      border: none;
-      background: transparent;
-      border-radius: 8px;
-      font-size: 14px;
-      font-weight: 500;
-      color: var(--muted);
-      cursor: pointer;
-      transition: all .2s ease;
-      text-align: center;
-    }
-    .tab.active {
-      background: var(--surface);
-      color: var(--purple);
-      font-weight: 600;
-      box-shadow: var(--shadow-sm);
-    }
-
-    /* Sections (toujours visibles) */
-    .tab-section {
-      margin-bottom: 20px;
-      scroll-margin-top: 140px; /* Pour compenser le header + onglets */
-    }
-
-    /* Streak Card */
-    .streak-card {
-      background: linear-gradient(135deg, #4F1D96 0%, #7C3AED 50%, #9333EA 100%);
-      border-radius: var(--rad-lg);
-      padding: 20px;
-      margin-bottom: 16px;
-      color: #fff;
-      position: relative;
-      overflow: hidden;
-      box-shadow: 0 8px 32px rgba(124,58,237,0.35);
-    }
-    .streak-card::before {
-      content: '';
-      position: absolute;
-      top: -30px; right: -20px;
-      width: 120px; height: 120px;
-      border-radius: 50%;
-      background: rgba(255,255,255,.06);
-    }
-    .streak-card::after {
-      content: '';
-      position: absolute;
-      bottom: -20px; right: 40px;
-      width: 70px; height: 70px;
-      border-radius: 50%;
-      background: rgba(255,255,255,.04);
-    }
-    .streak-title {
-      font-size: 12px;
-      font-weight: 500;
-      color: rgba(255,255,255,0.8);
-      margin-bottom: 8px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-    .streak-days {
-      font-family: 'Bricolage Grotesque', sans-serif;
-      font-size: 48px;
-      font-weight: 800;
-      line-height: 1;
-      letter-spacing: -2px;
-    }
-    .streak-label {
-      font-size: 14px;
-      font-weight: 500;
-      margin-top: 4px;
-    }
-    .streak-record {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: 16px;
-      font-size: 12px;
-      color: rgba(255,255,255,0.7);
-    }
-    .streak-record .badge {
-      background: rgba(255,255,255,0.2);
-      color: #fff;
-    }
-  </style>
 </head>
 <body>
   <div class="app">
@@ -200,67 +34,84 @@
 
       <!-- Quick Stats Grid -->
       <div class="quick-grid">
-        <div class="qcard repas" onclick="scrollToSection('meals-section')">
+        <div class="qcard repas" onclick="window.location.href='repas.html'">
           <span class="qcard-emoji">🥗</span>
           <div class="qcard-val" id="meal-count">0</div>
           <div class="qcard-label">Repas</div>
         </div>
-        <div class="qcard defis" onclick="scrollToSection('challenges-section')">
+        <div class="qcard defis" onclick="window.location.href='sport.html'">
           <span class="qcard-emoji">⚡</span>
           <div class="qcard-val" id="challenge-count">0/0</div>
           <div class="qcard-label">Défis</div>
         </div>
-        <div class="qcard passages" onclick="scrollToSection('poop-section')">
+        <div class="qcard passages" onclick="window.location.href='caca.html'">
           <span class="qcard-emoji">💩</span>
           <div class="qcard-val" id="poop-count">0</div>
           <div class="qcard-label">Passages</div>
         </div>
-        <div class="qcard objectifs" onclick="scrollToSection('goals-section')">
+        <div class="qcard objectifs" onclick="window.location.href='objectifs.html'">
           <span class="qcard-emoji">🎯</span>
           <div class="qcard-val" id="goal-percent">0%</div>
           <div class="qcard-label">Objectifs</div>
         </div>
       </div>
 
-      <!-- Onglets (pour la navigation) -->
-      <div class="tabs">
-        <button class="tab active" onclick="scrollToSection('meals-section')">🥗 Repas</button>
-        <button class="tab" onclick="scrollToSection('challenges-section')">⚡ Défis</button>
-        <button class="tab" onclick="scrollToSection('poop-section')">💩 Journal</button>
-        <button class="tab" onclick="scrollToSection('goals-section')">🎯 Objectifs</button>
+      <!-- Section: 7 jours pour 7 de suite -->
+      <div class="section-row">
+        <span class="section-title">7 jours pour 7 de suite</span>
       </div>
 
-      <!-- Sections (toujours visibles) -->
-      <div id="meals-section" class="tab-section">
-        <div class="section-row">
-          <span class="section-title">Derniers repas</span>
-          <a href="repas.html" class="section-link">Voir tout →</a>
+      <!-- Section: Objectifs -->
+      <div class="section-row">
+        <span class="section-title">Objectifs 🎯</span>
+        <a href="objectifs.html" class="section-link">Voir tout →</a>
+      </div>
+      <div class="card" id="goals-content">
+        <div class="empty">
+          <div class="empty-i">🎯</div>
+          <p style="font-weight:600;color:var(--text);font-size:16px">Aucun objectif actif</p>
+          <p style="font-size:13px;margin-top:6px;line-height:1.5">Fixez-vous des objectifs ensemble !</p>
+          <button class="btn btn-p" onclick="window.location.href='objectifs.html'" style="margin-top: 16px;">+ Nouvel objectif</button>
         </div>
-        <div id="meals-content"></div>
       </div>
 
-      <div id="challenges-section" class="tab-section">
-        <div class="section-row">
-          <span class="section-title">Défis en cours</span>
-          <a href="sport.html" class="section-link">Voir tout →</a>
+      <!-- Section: Derniers repas -->
+      <div class="section-row">
+        <span class="section-title">Derniers repas</span>
+        <a href="repas.html" class="section-link">Voir tout →</a>
+      </div>
+      <div class="card" id="meals-content">
+        <div class="empty">
+          <div class="empty-i">🍽️</div>
+          <p style="font-weight:600;color:var(--text);font-size:16px">Aucun repas</p>
+          <p style="font-size:13px;margin-top:6px;line-height:1.5">Ajoutez un repas pour commencer.</p>
         </div>
-        <div id="challenges-content"></div>
       </div>
 
-      <div id="poop-section" class="tab-section">
-        <div class="section-row">
-          <span class="section-title">Derniers passages</span>
-          <a href="caca.html" class="section-link">Voir tout →</a>
+      <!-- Section: Défis en cours -->
+      <div class="section-row">
+        <span class="section-title">Défis en cours</span>
+        <a href="sport.html" class="section-link">Voir tout →</a>
+      </div>
+      <div class="card" id="challenges-content">
+        <div class="empty">
+          <div class="empty-i">⚡</div>
+          <p style="font-weight:600;color:var(--text);font-size:16px">Aucun défi</p>
+          <p style="font-size:13px;margin-top:6px;line-height:1.5">Créez un défi pour commencer.</p>
         </div>
-        <div id="poop-content"></div>
       </div>
 
-      <div id="goals-section" class="tab-section">
-        <div class="section-row">
-          <span class="section-title">Objectifs 🎯</span>
-          <a href="objectifs.html" class="section-link">Voir tout →</a>
+      <!-- Section: Derniers passages -->
+      <div class="section-row">
+        <span class="section-title">Derniers passages</span>
+        <a href="caca.html" class="section-link">Voir tout →</a>
+      </div>
+      <div class="card" id="poop-content">
+        <div class="empty">
+          <div class="empty-i">💩</div>
+          <p style="font-weight:600;color:var(--text);font-size:16px">Aucun passage</p>
+          <p style="font-size:13px;margin-top:6px;line-height:1.5">Ajoutez un passage pour commencer.</p>
         </div>
-        <div id="goals-content"></div>
       </div>
     </div>
 
@@ -291,49 +142,25 @@
 
   <script>
     // Variables globales
-    const BRISTOL_EMOJI = {
-      1: "💩", 2: "💩", 3: "💩", 4: "💩", 5: "💩", 6: "💩", 7: "💩"
-    };
-    const SCORE_BADGE = {
-      "excellent": "b-green",
-      "bon": "b-teal",
-      "moyen": "b-amber",
-      "mauvais": "b-coral"
-    };
+    const BRISTOL_EMOJI = { 1: "💩", 2: "💩", 3: "💩", 4: "💩", 5: "💩", 6: "💩", 7: "💩" };
+    const SCORE_BADGE = { "excellent": "b-green", "bon": "b-teal", "moyen": "b-amber", "mauvais": "b-coral" };
 
-    // Fonction pour faire défiler vers une section
-    function scrollToSection(sectionId) {
-      const section = document.getElementById(sectionId);
-      if (section) {
-        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-
-      // Mettre à jour l'onglet actif
-      document.querySelectorAll('.tab').forEach(tab => {
-        tab.classList.remove('active');
-      });
-      event.target.classList.add('active');
-    }
-
-    // Fonction pour récupérer le profil
+    // Fonctions pour récupérer les données
     async function getProfile(userId) {
       const { data } = await db.from('profiles').select('*').eq('id', userId).single();
       return data;
     }
 
-    // Fonction pour récupérer le partenaire
     async function getPartner(userId) {
       const { data } = await db.from('profiles').select('*').neq('id', userId).limit(1).single();
       return data;
     }
 
-    // Fonction pour récupérer le couple
     async function getCouple(userId) {
       const { data } = await db.from('couples').select('*').or(`user1_id.eq.${userId},user2_id.eq.${userId}`).single();
       return data;
     }
 
-    // Fonction pour récupérer ou créer un streak
     async function getOrCreateStreak(coupleId) {
       const { data } = await db.from('streaks').select('*').eq('couple_id', coupleId).maybeSingle();
       if (data) return data;
@@ -342,138 +169,30 @@
       return s;
     }
 
-    // Fonction pour afficher les repas
-    function renderMeals(meals, profile) {
-      const container = document.getElementById('meals-content');
-      if (meals.length === 0) {
-        container.innerHTML = `
-          <div class="empty">
-            <div class="empty-i">🍽️</div>
-            <p style="font-weight:600;color:var(--text);font-size:16px">Aucun repas</p>
-            <p style="font-size:13px;margin-top:6px;line-height:1.5">Ajoutez un repas pour commencer.</p>
-          </div>
-        `;
-        return;
-      }
-      container.innerHTML = `
-        <div class="card">
-          ${meals.map(m => `
-            <div class="row-item">
-              <div class="av ${m.user_id === profile.id ? 'av-a' : 'av-b'}" style="font-size:10px">${m.profiles?.name?.[0]||'?'}</div>
-              <div style="flex:1">
-                <div style="font-size:13px;font-weight:500">${m.name}</div>
-                <div style="font-size:11px;color:var(--muted)">${new Date(m.date).toLocaleDateString('fr-FR')}</div>
-              </div>
-              <span class="badge b-purple">${m.type}</span>
-            </div>
-          `).join('')}
-        </div>
-      `;
-    }
-
-    // Fonction pour afficher les défis
-    function renderChallenges(challenges, profile) {
-      const container = document.getElementById('challenges-content');
-      if (challenges.length === 0) {
-        container.innerHTML = `
-          <div class="empty">
-            <div class="empty-i">⚡</div>
-            <p style="font-weight:600;color:var(--text);font-size:16px">Aucun défi</p>
-            <p style="font-size:13px;margin-top:6px;line-height:1.5">Créez un défi pour commencer.</p>
-          </div>
-        `;
-        return;
-      }
-      container.innerHTML = `
-        <div class="card">
-          ${challenges.map(c => `
-            <div class="row-item">
-              <div class="av ${c.user_id === profile.id ? 'av-a' : 'av-b'}" style="font-size:10px">${c.profiles?.name?.[0]||'?'}</div>
-              <div style="flex:1">
-                <div style="font-size:13px;font-weight:500">${c.name}</div>
-                <div style="font-size:11px;color:var(--muted)">${c.completed ? '✅ Terminé' : '⏳ En cours'}</div>
-              </div>
-              <span class="badge ${c.completed ? 'b-green' : 'b-gray'}">${c.completed ? 'Terminé' : 'En attente'}</span>
-            </div>
-          `).join('')}
-        </div>
-      `;
-    }
-
-    // Fonction pour afficher les passages
-    function renderPoop(poop, profile) {
-      const container = document.getElementById('poop-content');
-      if (poop.length === 0) {
-        container.innerHTML = `
-          <div class="empty">
-            <div class="empty-i">💩</div>
-            <p style="font-weight:600;color:var(--text);font-size:16px">Aucun passage</p>
-            <p style="font-size:13px;margin-top:6px;line-height:1.5">Ajoutez un passage pour commencer.</p>
-          </div>
-        `;
-        return;
-      }
-      container.innerHTML = `
-        <div class="card">
-          ${poop.map(p => `
-            <div class="row-item">
-              <div class="av ${p.user_id === profile.id ? 'av-a' : 'av-b'}" style="font-size:10px">${p.profiles?.name?.[0]||'?'}</div>
-              <div style="flex:1">
-                <div style="font-size:13px;font-weight:500">${BRISTOL_EMOJI[p.bristol_type]} Type ${p.bristol_type}</div>
-                <div style="font-size:11px;color:var(--muted)">${new Date(p.logged_at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})}</div>
-              </div>
-              <span class="badge ${SCORE_BADGE[p.score]||'b-gray'}">${p.score}</span>
-            </div>
-          `).join('')}
-        </div>
-      `;
-    }
-
-    // Fonction pour afficher les objectifs
-    function renderGoals(challenges, profile) {
-      const container = document.getElementById('goals-content');
-      if (challenges.length === 0) {
-        container.innerHTML = `
-          <div class="empty">
-            <div class="empty-i">🎯</div>
-            <p style="font-weight:600;color:var(--text);font-size:16px">Aucun objectif actif</p>
-            <p style="font-size:13px;margin-top:6px;line-height:1.5">Fixez-vous des objectifs ensemble !</p>
-          </div>
-        `;
-        return;
-      }
-      container.innerHTML = `
-        <div class="card">
-          ${challenges.map(c => `
-            <div class="row-item">
-              <div class="av ${c.user_id === profile.id ? 'av-a' : 'av-b'}" style="font-size:10px">${c.profiles?.name?.[0]||'?'}</div>
-              <div style="flex:1">
-                <div style="font-size:13px;font-weight:500">${c.name}</div>
-                <div style="font-size:11px;color:var(--muted)">Progrès: ${c.completed ? '100%' : '0%'}</div>
-              </div>
-              <span class="badge ${c.completed ? 'b-green' : 'b-gray'}">${c.completed ? 'Atteint' : 'En cours'}</span>
-            </div>
-          `).join('')}
-        </div>
-      `;
-    }
-
-    // Fonction d'initialisation
+    // Fonction pour afficher les données
     async function init() {
       try {
+        // Vérifier l'utilisateur connecté
         const { data: { user } } = await db.auth.getUser();
-        if (!user) { window.location.href = "login.html"; return; }
+        if (!user) {
+          window.location.href = "login.html";
+          return;
+        }
 
+        // Récupérer les données de l'utilisateur, du partenaire et du couple
         const profile = await getProfile(user.id);
         const partner = await getPartner(user.id);
         const couple = await getCouple(user.id);
-        if (!couple) { window.location.href = "login.html"; return; }
+        if (!couple) {
+          window.location.href = "login.html";
+          return;
+        }
 
-        // Charger les données en parallèle
+        // Charger toutes les données en parallèle
         const [meals, challenges, poop, streak] = await Promise.all([
-          db.from('meals').select('*, profiles(name)').eq('couple_id', couple.id).order('date', { ascending: false }).limit(10),
-          db.from('challenges').select('*, profiles(name)').eq('couple_id', couple.id).order('created_at', { ascending: false }).limit(10),
-          db.from('poop').select('*, profiles(name)').eq('couple_id', couple.id).order('logged_at', { ascending: false }).limit(10),
+          db.from('meals').select('*, profiles(name)').eq('couple_id', couple.id).order('date', { ascending: false }).limit(3),
+          db.from('challenges').select('*, profiles(name)').eq('couple_id', couple.id).order('created_at', { ascending: false }).limit(3),
+          db.from('poop').select('*, profiles(name)').eq('couple_id', couple.id).order('logged_at', { ascending: false }).limit(3),
           getOrCreateStreak(couple.id)
         ]);
 
@@ -486,18 +205,84 @@
 
         // Mettre à jour les quick stats
         document.getElementById('meal-count').textContent = meals.length;
-        document.getElementById('challenge-count').textContent = `${challenges.filter(c => c.completed).length}/${challenges.length}`;
+        const completedChallenges = challenges.filter(c => c.completed).length;
+        document.getElementById('challenge-count').textContent = `${completedChallenges}/${challenges.length}`;
         document.getElementById('poop-count').textContent = poop.length;
-        document.getElementById('goal-percent').textContent = `${Math.round((challenges.filter(c => c.completed).length / challenges.length) * 100)}%`;
+        const goalPercent = challenges.length > 0 ? Math.round((completedChallenges / challenges.length) * 100) : 0;
+        document.getElementById('goal-percent').textContent = `${goalPercent}%`;
 
-        // Rendre les sections
-        renderMeals(meals, profile);
-        renderChallenges(challenges, profile);
-        renderPoop(poop, profile);
-        renderGoals(challenges, profile);
+        // Afficher les données dans les sections
+        // Objectifs
+        const goalsContent = document.getElementById('goals-content');
+        if (challenges.length > 0) {
+          goalsContent.innerHTML = `
+            ${challenges.map(c => `
+              <div class="row-item">
+                <div class="av ${c.user_id === profile.id ? 'av-a' : 'av-b'}" style="font-size:10px">${c.profiles?.name?.[0] || '?'}</div>
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:500">${c.name}</div>
+                  <div style="font-size:11px;color:var(--muted)">Progrès: ${c.completed ? '100%' : '0%'}</div>
+                </div>
+                <span class="badge ${c.completed ? 'b-green' : 'b-gray'}">${c.completed ? 'Atteint' : 'En cours'}</span>
+              </div>
+            `).join('')}
+          `;
+        }
+
+        // Repas
+        const mealsContent = document.getElementById('meals-content');
+        if (meals.length > 0) {
+          mealsContent.innerHTML = `
+            ${meals.map(m => `
+              <div class="row-item">
+                <div class="av ${m.user_id === profile.id ? 'av-a' : 'av-b'}" style="font-size:10px">${m.profiles?.name?.[0] || '?'}</div>
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:500">${m.name}</div>
+                  <div style="font-size:11px;color:var(--muted)">${new Date(m.date).toLocaleDateString('fr-FR')}</div>
+                </div>
+                <span class="badge b-purple">${m.type}</span>
+              </div>
+            `).join('')}
+          `;
+        }
+
+        // Défis
+        const challengesContent = document.getElementById('challenges-content');
+        if (challenges.length > 0) {
+          challengesContent.innerHTML = `
+            ${challenges.map(c => `
+              <div class="row-item">
+                <div class="av ${c.user_id === profile.id ? 'av-a' : 'av-b'}" style="font-size:10px">${c.profiles?.name?.[0] || '?'}</div>
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:500">${c.name}</div>
+                  <div style="font-size:11px;color:var(--muted)">${c.completed ? '✅ Terminé' : '⏳ En cours'}</div>
+                </div>
+                <span class="badge ${c.completed ? 'b-green' : 'b-gray'}">${c.completed ? 'Terminé' : 'En attente'}</span>
+              </div>
+            `).join('')}
+          `;
+        }
+
+        // Passages
+        const poopContent = document.getElementById('poop-content');
+        if (poop.length > 0) {
+          poopContent.innerHTML = `
+            ${poop.map(p => `
+              <div class="row-item">
+                <div class="av ${p.user_id === profile.id ? 'av-a' : 'av-b'}" style="font-size:10px">${p.profiles?.name?.[0] || '?'}</div>
+                <div style="flex:1">
+                  <div style="font-size:13px;font-weight:500">${BRISTOL_EMOJI[p.bristol_type]} Type ${p.bristol_type}</div>
+                  <div style="font-size:11px;color:var(--muted)">${new Date(p.logged_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</div>
+                </div>
+                <span class="badge ${SCORE_BADGE[p.score] || 'b-gray'}">${p.score}</span>
+              </div>
+            `).join('')}
+          `;
+        }
 
       } catch (error) {
         console.error("Erreur lors du chargement des données :", error);
+        // Afficher un message d'erreur dans la page
         document.querySelector('.page').innerHTML = `
           <div class="empty">
             <div class="empty-i">⚠️</div>
@@ -509,7 +294,7 @@
       }
     }
 
-    // Démarrer l'application
+    // Démarrer l'application quand le DOM est chargé
     document.addEventListener('DOMContentLoaded', init);
   </script>
 </body>
