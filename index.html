@@ -174,79 +174,6 @@
         </div>
       </div>
 
-      <!-- 7 jours -->
-      <div class="week-card">
-        <div class="week-header">
-          <span>7 jours pour 7 de suite</span>
-        </div>
-        <div class="mini-week" id="week-row"></div>
-        <div class="cat-bars">
-          <div class="cat-bar-row">
-            <span class="cat-bar-label">🥗 Repas</span>
-            <div class="cat-bar-bg"><div class="cat-bar-fill" id="wbar-meals" style="background:#639922;width:0%"></div></div>
-            <span class="cat-bar-count" id="wcount-meals">0</span>
-          </div>
-          <div class="cat-bar-row">
-            <span class="cat-bar-label">⚡ Défis</span>
-            <div class="cat-bar-bg"><div class="cat-bar-fill" id="wbar-defis" style="background:#7F77DD;width:0%"></div></div>
-            <span class="cat-bar-count" id="wcount-defis">0/0</span>
-          </div>
-          <div class="cat-bar-row">
-            <span class="cat-bar-label">💩 Passages</span>
-            <div class="cat-bar-bg"><div class="cat-bar-fill" id="wbar-poop" style="background:#D85A30;width:0%"></div></div>
-            <span class="cat-bar-count" id="wcount-poop">0</span>
-          </div>
-          <div class="cat-bar-row">
-            <span class="cat-bar-label">🎯 Objectifs</span>
-            <div class="cat-bar-bg"><div class="cat-bar-fill" id="wbar-goals" style="background:#1D9E75;width:0%"></div></div>
-            <span class="cat-bar-count" id="wcount-goals">0%</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Objectifs -->
-      <div class="section-card-new" id="sec-objectifs">
-        <div class="sec-header-new">
-          <span class="sec-title-new">🎯 Objectifs</span>
-          <a href="objectifs.html" class="sec-link-new">Voir tout →</a>
-        </div>
-        <div id="goals-content">
-          <div class="empty-row">Aucun objectif actif</div>
-        </div>
-      </div>
-
-      <!-- Repas -->
-      <div class="section-card-new" id="sec-repas">
-        <div class="sec-header-new">
-          <span class="sec-title-new">🥗 Derniers repas</span>
-          <a href="repas.html" class="sec-link-new">Voir tout →</a>
-        </div>
-        <div id="meals-content">
-          <div class="empty-row">Aucun repas enregistré</div>
-        </div>
-      </div>
-
-      <!-- Défis -->
-      <div class="section-card-new" id="sec-defis">
-        <div class="sec-header-new">
-          <span class="sec-title-new">⚡ Défis en cours</span>
-          <a href="sport.html" class="sec-link-new">Voir tout →</a>
-        </div>
-        <div id="challenges-content">
-          <div class="empty-row">Aucun défi en cours</div>
-        </div>
-      </div>
-
-      <!-- Passages -->
-      <div class="section-card-new" id="sec-poop">
-        <div class="sec-header-new">
-          <span class="sec-title-new">💩 Passages récents</span>
-          <a href="caca.html" class="sec-link-new">Voir tout →</a>
-        </div>
-        <div id="poop-content">
-          <div class="empty-row">Aucun passage enregistré</div>
-        </div>
-      </div>
 
     </div>
 
@@ -262,63 +189,6 @@
   </div>
 
   <script>
-    const BRISTOL_EMOJI = { 1:"💩",2:"💩",3:"💩",4:"💩",5:"💩",6:"💩",7:"💩" };
-    const SCORE_BADGE   = { "excellent":"b-green","bon":"b-teal","moyen":"b-amber","mauvais":"b-coral" };
-    const DAYS_SHORT    = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
-
-    // ── Utilitaires ────────────────────────────────────────────────────────────
-
-    function buildWeekDots() {
-      const today = new Date().getDay();
-      document.getElementById('week-row').innerHTML = DAYS_SHORT.map((d, i) => {
-        const isToday   = i === today;
-        const hasDone   = i < today || isToday;
-        const cls       = isToday ? 'day-today' : hasDone ? 'day-on' : 'day-off';
-        const mark      = hasDone ? '✓' : '';
-        return `<div class="day-dot"><span class="day-lbl">${d}</span><div class="day-circle ${cls}">${mark}</div></div>`;
-      }).join('');
-    }
-
-    function updateWeekBars(meals, done, total, poop, goalPct) {
-      document.getElementById('wbar-meals').style.width  = Math.min(meals * 10, 100) + '%';
-      document.getElementById('wcount-meals').textContent = meals;
-      document.getElementById('wbar-defis').style.width  = total > 0 ? Math.round((done / total) * 100) + '%' : '0%';
-      document.getElementById('wcount-defis').textContent = `${done}/${total}`;
-      document.getElementById('wbar-poop').style.width   = Math.min(poop * 10, 100) + '%';
-      document.getElementById('wcount-poop').textContent  = poop;
-      document.getElementById('wbar-goals').style.width  = goalPct + '%';
-      document.getElementById('wcount-goals').textContent = goalPct + '%';
-    }
-
-    function updateStreak(current, best) {
-      document.getElementById('streak-days').textContent = current;
-      document.getElementById('best-streak').textContent = best;
-      const pct = Math.min(Math.round((current / 7) * 100), 100);
-      document.getElementById('streak-fill').style.width = pct + '%';
-      document.getElementById('streak-pct').textContent  = pct + '%';
-    }
-
-    function renderRows(containerId, items, renderFn, emptyMsg) {
-      const el = document.getElementById(containerId);
-      if (!items || !items.length) {
-        el.innerHTML = `<div class="empty-row">${emptyMsg}</div>`;
-        return;
-      }
-      el.innerHTML = items.map(renderFn).join('');
-    }
-
-    function rowHtml(avatarCls, initial, name, sub, badgeCls, badgeLabel) {
-      return `
-        <div class="row-item-new">
-          <div class="av ${avatarCls}" style="font-size:10px">${initial}</div>
-          <div class="ri-info">
-            <div class="ri-name">${name}</div>
-            <div class="ri-sub">${sub}</div>
-          </div>
-          <span class="badge ${badgeCls}">${badgeLabel}</span>
-        </div>`;
-    }
-
     // ── Courbe de poids ────────────────────────────────────────────────────────
 
     function drawWeightChart(myWeights, partnerWeights, myName, partnerName) {
@@ -390,21 +260,9 @@
       drawLine(partnerWeights, '#7F77DD');
     }
 
-    // ── Data helpers ───────────────────────────────────────────────────────────
-
-    async function getOrCreateStreak(coupleId) {
-      const { data } = await db.from('streaks').select('*').eq('couple_id', coupleId).maybeSingle();
-      if (data) return data;
-      const s = { couple_id: coupleId, current_streak: 0, best_streak: 0, last_active_date: new Date().toISOString().split('T')[0] };
-      await db.from('streaks').insert(s);
-      return s;
-    }
-
     // ── Init ───────────────────────────────────────────────────────────────────
 
     async function init() {
-      buildWeekDots();
-
       try {
         const { data: { user } } = await db.auth.getUser();
         if (!user) { window.location.href = 'login.html'; return; }
@@ -425,22 +283,13 @@
 
         const today = new Date().toISOString().split('T')[0];
 
-        const [mRes, calRes, cRes, pRes, streak, wMyRes, wPartRes] = await Promise.all([
-          db.from('meals').select('*, profiles(name)').eq('couple_id', coupleId).order('date', { ascending: false }).limit(3),
+        const [calRes, wMyRes, wPartRes] = await Promise.all([
           db.from('meals').select('user_id, calories').eq('couple_id', coupleId).eq('date', today),
-          db.from('challenges').select('*, profiles(name)').eq('couple_id', coupleId).order('created_at', { ascending: false }).limit(5),
-          db.from('poop').select('*, profiles(name)').eq('couple_id', coupleId).order('logged_at', { ascending: false }).limit(3),
-          getOrCreateStreak(coupleId),
           db.from('weight_logs').select('weight, date').eq('user_id', user.id).order('date', { ascending: true }).limit(30),
           partnerProfile ? db.from('weight_logs').select('weight, date').eq('user_id', partnerProfile.id).order('date', { ascending: true }).limit(30) : Promise.resolve({ data: [] })
         ]);
 
-        const meals      = mRes.data  || [];
         const calEntries = calRes.data || [];
-        const challenges = cRes.data  || [];
-        const poops      = pRes.data  || [];
-        const done       = challenges.filter(c => c.completed).length;
-        const goalPct    = challenges.length > 0 ? Math.round((done / challenges.length) * 100) : 0;
 
         // Calories du jour
         const myCal  = calEntries.filter(e => e.user_id === user.id).reduce((s, e) => s + (e.calories||0), 0);
@@ -455,45 +304,11 @@
         document.getElementById('dash-cal-bar').style.width     = calPct + '%';
         document.getElementById('dash-cal-bar').style.background = calColor;
 
-        updateStreak(streak.current_streak, streak.best_streak);
-        updateWeekBars(meals.length, done, challenges.length, poops.length, goalPct);
-
         // Courbe de poids
         const myWeights  = (wMyRes.data  || []).filter(e => e.weight);
         const parWeights = (wPartRes.data || []).filter(e => e.weight);
         drawWeightChart(myWeights, parWeights, myName, partnerName);
 
-        // Objectifs
-        renderRows('goals-content', challenges, c => {
-          const avCls = c.user_id === user.id ? 'av-a' : 'av-b';
-          const init  = (c.profiles?.name || '?')[0];
-          return rowHtml(avCls, init, c.name, c.completed ? 'Atteint' : 'En cours',
-            c.completed ? 'b-green' : 'b-gray', c.completed ? '✓ Atteint' : '⏳ En cours');
-        }, 'Aucun objectif actif');
-
-        // Repas
-        renderRows('meals-content', meals, m => {
-          const avCls = m.user_id === user.id ? 'av-a' : 'av-b';
-          const init  = (m.profiles?.name || '?')[0];
-          return rowHtml(avCls, init, m.name, new Date(m.date).toLocaleDateString('fr-FR'), 'b-purple', m.type || '');
-        }, 'Aucun repas enregistré');
-
-        // Défis
-        renderRows('challenges-content', challenges, c => {
-          const avCls = c.user_id === user.id ? 'av-a' : 'av-b';
-          const init  = (c.profiles?.name || '?')[0];
-          return rowHtml(avCls, init, c.name, c.completed ? '✅ Terminé' : '⏳ En cours',
-            c.completed ? 'b-green' : 'b-gray', c.completed ? 'Terminé' : 'En attente');
-        }, 'Aucun défi en cours');
-
-        // Passages
-        renderRows('poop-content', poops, p => {
-          const avCls = p.user_id === user.id ? 'av-a' : 'av-b';
-          const init  = (p.profiles?.name || '?')[0];
-          const time  = new Date(p.logged_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-          return rowHtml(avCls, init, `${BRISTOL_EMOJI[p.bristol_type]} Type ${p.bristol_type}`, time,
-            SCORE_BADGE[p.score] || 'b-gray', p.score);
-        }, 'Aucun passage enregistré');
 
       } catch (error) {
         console.error('Erreur lors du chargement des données :', error);
@@ -507,20 +322,6 @@
       }
     }
 
-    document.addEventListener('DOMContentLoaded', init);
-
-    // ── Utilitaires ────────────────────────────────────────────────────────────
-
-    function buildWeekDots() {
-      const today = new Date().getDay();
-      document.getElementById('week-row').innerHTML = DAYS_SHORT.map((d, i) => {
-        const isToday   = i === today;
-        const hasDone   = i < today || isToday;
-        const cls       = isToday ? 'day-today' : hasDone ? 'day-on' : 'day-off';
-        const mark      = hasDone ? '✓' : '';
-        return `<div class="day-dot"><span class="day-lbl">${d}</span><div class="day-circle ${cls}">${mark}</div></div>`;
-      }).join('');
-    }
 
     document.addEventListener('DOMContentLoaded', init);
   </script>
