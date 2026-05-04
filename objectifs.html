@@ -7,12 +7,11 @@
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="config.js"></script>
-  <script src="sticky-bar.js"></script>
 </head>
 <body>
 <div class="app">
   <div class="hdr"><h1>Objectifs 🎯</h1><p>Vos challenges long terme</p></div>
-  <div class="page">
+  <div class="page" style="padding-bottom:80px;">
     <div id="streak-section"></div>
     <button class="btn btn-p" style="margin-bottom:16px" onclick="document.getElementById('modal').classList.add('open')">+ Nouvel objectif</button>
     <div id="shared-section"></div>
@@ -21,7 +20,7 @@
   </div>
 </div>
 
-<nav class="nav">
+<nav class="nav" style="position:fixed;bottom:0;left:0;right:0;z-index:100;background:var(--card,#fff);border-top:0.5px solid rgba(0,0,0,0.1);padding-bottom:env(safe-area-inset-bottom,0px);">
   <a href="index.html"><span class="ni">🏠</span><span class="nl">Dashboard</span></a>
   <a href="repas.html"><span class="ni">🍽️</span><span class="nl">Repas</span></a>
   <a href="sport.html"><span class="ni">⚡</span><span class="nl">Sport</span></a>
