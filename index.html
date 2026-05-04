@@ -12,33 +12,6 @@
   <script src="config.js"></script>
 
   <style>
-    .sticky-bar {
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      background: var(--bg, #fff);
-      border-bottom: 0.5px solid rgba(0,0,0,0.08);
-      padding: 10px 12px;
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 6px;
-    }
-    .sb-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 2px;
-      padding: 8px 4px;
-      border-radius: 10px;
-      background: rgba(0,0,0,0.04);
-      cursor: pointer;
-    }
-    .sb-icon { font-size: 15px; }
-    .sb-val  { font-size: 15px; font-weight: 600; color: var(--text, #111); }
-    .sb-label{ font-size: 10px; color: var(--muted, #888); }
-    .sb-bar  { width: 100%; height: 3px; border-radius: 2px; background: rgba(0,0,0,0.08); margin-top: 3px; overflow: hidden; }
-    .sb-fill { height: 100%; border-radius: 2px; transition: width 0.5s; }
-
     .streak-card-new {
       background: var(--card, #fff);
       border-radius: 16px;
@@ -126,34 +99,6 @@
       <p>Bienvenue, <span id="user-name">Nico</span> 👋</p>
     </div>
 
-    <!-- Sticky Stats Bar -->
-    <div class="sticky-bar" style="grid-template-columns:repeat(4,1fr)">
-      <div class="sb-item" onclick="document.getElementById('sec-repas').scrollIntoView({behavior:'smooth'})">
-        <span class="sb-icon">🥗</span>
-        <span class="sb-val" id="stat-meals">0</span>
-        <span class="sb-label">Repas</span>
-        <div class="sb-bar"><div class="sb-fill" id="bar-meals" style="background:#639922;width:0%"></div></div>
-      </div>
-      <div class="sb-item" onclick="document.getElementById('sec-calories').scrollIntoView({behavior:'smooth'})">
-        <span class="sb-icon">🔥</span>
-        <span class="sb-val" id="stat-calories">—</span>
-        <span class="sb-label">kcal</span>
-        <div class="sb-bar"><div class="sb-fill" id="bar-calories" style="background:#E24B4A;width:0%"></div></div>
-      </div>
-      <div class="sb-item" onclick="document.getElementById('sec-defis').scrollIntoView({behavior:'smooth'})">
-        <span class="sb-icon">⚡</span>
-        <span class="sb-val" id="stat-defis">0/0</span>
-        <span class="sb-label">Défis</span>
-        <div class="sb-bar"><div class="sb-fill" id="bar-defis" style="background:#7F77DD;width:0%"></div></div>
-      </div>
-      <div class="sb-item" onclick="document.getElementById('sec-objectifs').scrollIntoView({behavior:'smooth'})">
-        <span class="sb-icon">🎯</span>
-        <span class="sb-val" id="stat-goals">0%</span>
-        <span class="sb-label">Objectifs</span>
-        <div class="sb-bar"><div class="sb-fill" id="bar-goals" style="background:#1D9E75;width:0%"></div></div>
-      </div>
-    </div>
-
     <!-- Page Content -->
     <div class="page" style="padding-bottom:80px;">
 
@@ -213,34 +158,19 @@
         </div>
       </div>
 
-      <!-- Calories du jour -->
-      <div class="section-card-new" id="sec-calories">
+      <!-- Courbe de poids -->
+      <div class="section-card-new" id="sec-poids">
         <div class="sec-header-new">
-          <span class="sec-title-new">🔥 Calories aujourd'hui</span>
-          <a href="repas.html" class="sec-link-new">Détail →</a>
+          <span class="sec-title-new">⚖️ Courbe de poids</span>
+          <a href="poids.html" class="sec-link-new">Détail →</a>
         </div>
-        <div style="padding:14px">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-            <div style="text-align:center;padding:10px;background:rgba(0,0,0,0.03);border-radius:12px">
-              <div style="font-size:10px;color:var(--muted);margin-bottom:4px">Mes calories</div>
-              <div style="font-size:24px;font-weight:700;color:var(--text)" id="dash-my-cal">—</div>
-              <div style="font-size:10px;color:var(--muted)">kcal</div>
-            </div>
-            <div style="text-align:center;padding:10px;background:rgba(0,0,0,0.03);border-radius:12px">
-              <div style="font-size:10px;color:var(--muted);margin-bottom:4px" id="dash-partner-lbl">Partenaire</div>
-              <div style="font-size:24px;font-weight:700;color:var(--text)" id="dash-partner-cal">—</div>
-              <div style="font-size:10px;color:var(--muted)">kcal</div>
-            </div>
+        <div style="padding:12px 14px 14px">
+          <div style="display:flex;gap:14px;margin-bottom:10px;font-size:11px">
+            <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:3px;border-radius:2px;background:#639922;display:inline-block"></span><span id="legend-me">Moi</span></span>
+            <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:3px;border-radius:2px;background:#7F77DD;display:inline-block"></span><span id="legend-partner">Partenaire</span></span>
           </div>
-          <div>
-            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px">
-              <span>Objectif 2000 kcal</span>
-              <span id="dash-cal-pct">0%</span>
-            </div>
-            <div style="height:6px;border-radius:3px;background:rgba(0,0,0,0.07);overflow:hidden">
-              <div id="dash-cal-bar" style="height:100%;border-radius:3px;background:#E24B4A;width:0%;transition:width 0.5s"></div>
-            </div>
-          </div>
+          <canvas id="weight-chart" style="width:100%;height:160px;display:block"></canvas>
+          <div id="weight-empty" style="display:none;text-align:center;font-size:13px;color:var(--muted);padding:20px 0">Aucune donnée de poids enregistrée</div>
         </div>
       </div>
 
@@ -349,17 +279,6 @@
       }).join('');
     }
 
-    function updateStickyBar(meals, done, total, poop, goalPct) {
-      document.getElementById('stat-meals').textContent = meals;
-      document.getElementById('stat-defis').textContent = total > 0 ? `${done}/${total}` : '0/0';
-      document.getElementById('stat-poop').textContent  = poop;
-      document.getElementById('stat-goals').textContent = goalPct + '%';
-      document.getElementById('bar-meals').style.width  = Math.min(meals * 10, 100) + '%';
-      document.getElementById('bar-defis').style.width  = total > 0 ? Math.round((done / total) * 100) + '%' : '0%';
-      document.getElementById('bar-poop').style.width   = Math.min(poop * 10, 100) + '%';
-      document.getElementById('bar-goals').style.width  = goalPct + '%';
-    }
-
     function updateWeekBars(meals, done, total, poop, goalPct) {
       document.getElementById('wbar-meals').style.width  = Math.min(meals * 10, 100) + '%';
       document.getElementById('wcount-meals').textContent = meals;
@@ -400,6 +319,77 @@
         </div>`;
     }
 
+    // ── Courbe de poids ────────────────────────────────────────────────────────
+
+    function drawWeightChart(myWeights, partnerWeights, myName, partnerName) {
+      const canvas = document.getElementById('weight-chart');
+      const empty  = document.getElementById('weight-empty');
+      if (!myWeights.length && !partnerWeights.length) {
+        canvas.style.display = 'none'; empty.style.display = 'block'; return;
+      }
+      document.getElementById('legend-me').textContent      = myName;
+      document.getElementById('legend-partner').textContent = partnerName;
+
+      const dpr = window.devicePixelRatio || 1;
+      const W = canvas.offsetWidth || canvas.parentElement.offsetWidth - 28;
+      const H = 160;
+      canvas.width  = W * dpr; canvas.height = H * dpr;
+      canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+      const ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+
+      const pad = { top: 10, right: 10, bottom: 28, left: 36 };
+      const cW = W - pad.left - pad.right;
+      const cH = H - pad.top - pad.bottom;
+
+      // Merge dates for x-axis
+      const allDates = [...new Set([...myWeights, ...partnerWeights].map(e => e.date))].sort();
+      if (!allDates.length) { canvas.style.display='none'; empty.style.display='block'; return; }
+
+      const allVals = [...myWeights, ...partnerWeights].map(e => e.weight).filter(Boolean);
+      const minW = Math.floor(Math.min(...allVals) - 1);
+      const maxW = Math.ceil(Math.max(...allVals) + 1);
+
+      const xScale = i => pad.left + (i / (allDates.length - 1 || 1)) * cW;
+      const yScale = v => pad.top + cH - ((v - minW) / (maxW - minW || 1)) * cH;
+
+      // Grid lines
+      ctx.strokeStyle = 'rgba(0,0,0,0.06)'; ctx.lineWidth = 1;
+      for (let i = 0; i <= 4; i++) {
+        const y = pad.top + (i / 4) * cH;
+        ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + cW, y); ctx.stroke();
+        const val = maxW - ((maxW - minW) * i / 4);
+        ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.font = '9px system-ui'; ctx.textAlign = 'right';
+        ctx.fillText(val.toFixed(1), pad.left - 4, y + 3);
+      }
+
+      // X labels (show max 5)
+      const step = Math.ceil(allDates.length / 5);
+      ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.font = '9px system-ui'; ctx.textAlign = 'center';
+      allDates.forEach((d, i) => {
+        if (i % step !== 0 && i !== allDates.length - 1) return;
+        ctx.fillText(d.slice(5), xScale(i), H - 4);
+      });
+
+      function drawLine(data, color) {
+        if (!data.length) return;
+        const pts = data.map(e => {
+          const xi = allDates.indexOf(e.date);
+          return { x: xScale(xi), y: yScale(e.weight) };
+        });
+        ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.lineJoin = 'round';
+        ctx.beginPath(); pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+        ctx.stroke();
+        pts.forEach(p => {
+          ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+          ctx.fillStyle = color; ctx.fill();
+        });
+      }
+
+      drawLine(myWeights, '#639922');
+      drawLine(partnerWeights, '#7F77DD');
+    }
+
     // ── Data helpers ───────────────────────────────────────────────────────────
 
     async function getOrCreateStreak(coupleId) {
@@ -419,21 +409,30 @@
         const { data: { user } } = await db.auth.getUser();
         if (!user) { window.location.href = 'login.html'; return; }
 
-        const [{ data: profile }, { data: couple }] = await Promise.all([
-          db.from('profiles').select('*').eq('id', user.id).single(),
-          db.from('couples').select('*').or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`).single()
-        ]);
-        if (!couple) { window.location.href = 'login.html'; return; }
+        const { data: profile } = await db.from('profiles').select('*').eq('id', user.id).single();
+        if (!profile) { window.location.href = 'login.html'; return; }
+
+        // Schéma réel : couple_id est un texte dans profiles (ex: "anna-et-nico-2024")
+        const coupleId = profile.couple_id;
 
         document.getElementById('user-name').textContent = profile?.name || 'Nico';
 
+        // Trouver le partenaire via couple_id texte (même logique que poids.html)
+        const { data: partnerProfile } = await db.from('profiles').select('*').eq('couple_id', coupleId).neq('id', user.id).maybeSingle();
+        const partnerName = partnerProfile?.name || 'Partenaire';
+        const myName = profile?.name || 'Moi';
+        document.getElementById('dash-partner-cal-label').textContent = partnerName;
+
         const today = new Date().toISOString().split('T')[0];
-        const [mRes, calRes, cRes, pRes, streak] = await Promise.all([
-          db.from('meals').select('*, profiles(name)').eq('couple_id', couple.id).order('date', { ascending: false }).limit(3),
-          db.from('meals').select('*').eq('couple_id', couple.id).eq('date', today),
-          db.from('challenges').select('*, profiles(name)').eq('couple_id', couple.id).order('created_at', { ascending: false }).limit(5),
-          db.from('poop').select('*, profiles(name)').eq('couple_id', couple.id).order('logged_at', { ascending: false }).limit(3),
-          getOrCreateStreak(couple.id)
+
+        const [mRes, calRes, cRes, pRes, streak, wMyRes, wPartRes] = await Promise.all([
+          db.from('meals').select('*, profiles(name)').eq('couple_id', coupleId).order('date', { ascending: false }).limit(3),
+          db.from('meals').select('user_id, calories').eq('couple_id', coupleId).eq('date', today),
+          db.from('challenges').select('*, profiles(name)').eq('couple_id', coupleId).order('created_at', { ascending: false }).limit(5),
+          db.from('poop').select('*, profiles(name)').eq('couple_id', coupleId).order('logged_at', { ascending: false }).limit(3),
+          getOrCreateStreak(coupleId),
+          db.from('weight_logs').select('weight, date').eq('user_id', user.id).order('date', { ascending: true }).limit(30),
+          partnerProfile ? db.from('weight_logs').select('weight, date').eq('user_id', partnerProfile.id).order('date', { ascending: true }).limit(30) : Promise.resolve({ data: [] })
         ]);
 
         const meals      = mRes.data  || [];
@@ -443,24 +442,26 @@
         const done       = challenges.filter(c => c.completed).length;
         const goalPct    = challenges.length > 0 ? Math.round((done / challenges.length) * 100) : 0;
 
-        // Calories
-        const myCal     = calEntries.filter(e => e.user_id === profile?.id).reduce((s, e) => s + (e.calories||0), 0);
-        const parCal    = calEntries.filter(e => e.user_id !== profile?.id).reduce((s, e) => s + (e.calories||0), 0);
-        const calGoal   = 2000;
-        const calPct    = Math.min(100, Math.round((myCal / calGoal) * 100));
-        const calColor  = myCal === 0 ? '#E24B4A' : myCal < 1500 ? '#639922' : myCal < 2200 ? '#F59E0B' : '#E24B4A';
-        document.getElementById('dash-my-cal').textContent    = myCal || '—';
-        document.getElementById('dash-my-cal').style.color    = myCal ? calColor : 'var(--muted)';
-        document.getElementById('dash-partner-cal').textContent = parCal || '—';
-        document.getElementById('dash-cal-pct').textContent   = calPct + '%';
-        document.getElementById('dash-cal-bar').style.width   = calPct + '%';
+        // Calories du jour
+        const myCal  = calEntries.filter(e => e.user_id === user.id).reduce((s, e) => s + (e.calories||0), 0);
+        const parCal = calEntries.filter(e => e.user_id !== user.id).reduce((s, e) => s + (e.calories||0), 0);
+        const calGoal  = 2000;
+        const calPct   = Math.min(100, Math.round((myCal / calGoal) * 100));
+        const calColor = myCal === 0 ? '#E24B4A' : myCal < 1500 ? '#639922' : myCal < 2200 ? '#F59E0B' : '#E24B4A';
+        document.getElementById('dash-my-cal').textContent      = myCal || '—';
+        document.getElementById('dash-my-cal').style.color      = myCal ? calColor : 'var(--muted)';
+        document.getElementById('dash-partner-cal').textContent  = parCal || '—';
+        document.getElementById('dash-cal-pct').textContent     = calPct + '%';
+        document.getElementById('dash-cal-bar').style.width     = calPct + '%';
         document.getElementById('dash-cal-bar').style.background = calColor;
-        document.getElementById('stat-calories').textContent  = myCal || '—';
-        document.getElementById('bar-calories').style.width   = calPct + '%';
 
         updateStreak(streak.current_streak, streak.best_streak);
-        updateStickyBar(meals.length, done, challenges.length, poops.length, goalPct);
         updateWeekBars(meals.length, done, challenges.length, poops.length, goalPct);
+
+        // Courbe de poids
+        const myWeights  = (wMyRes.data  || []).filter(e => e.weight);
+        const parWeights = (wPartRes.data || []).filter(e => e.weight);
+        drawWeightChart(myWeights, parWeights, myName, partnerName);
 
         // Objectifs
         renderRows('goals-content', challenges, c => {
@@ -504,6 +505,21 @@
             <button class="btn btn-p" onclick="location.reload()">Rafraîchir</button>
           </div>`;
       }
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+
+    // ── Utilitaires ────────────────────────────────────────────────────────────
+
+    function buildWeekDots() {
+      const today = new Date().getDay();
+      document.getElementById('week-row').innerHTML = DAYS_SHORT.map((d, i) => {
+        const isToday   = i === today;
+        const hasDone   = i < today || isToday;
+        const cls       = isToday ? 'day-today' : hasDone ? 'day-on' : 'day-off';
+        const mark      = hasDone ? '✓' : '';
+        return `<div class="day-dot"><span class="day-lbl">${d}</span><div class="day-circle ${cls}">${mark}</div></div>`;
+      }).join('');
     }
 
     document.addEventListener('DOMContentLoaded', init);
