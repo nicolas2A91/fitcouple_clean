@@ -95,11 +95,8 @@
   <div class="app">
     <!-- Header -->
     <div class="hdr" style="display:flex;justify-content:space-between;align-items:flex-start">
-      <div>
-        <h1>Dashboard</h1>
-        <p>Bienvenue, <span id="user-name">Nico</span> 👋</p>
-      </div>
-      <button onclick="logout()" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--muted);padding:4px 0;margin-top:6px">Déconnexion</button>
+      <div><h1>Dashboard</h1><p>Bienvenue, <span id="user-name">Nico</span> 👋</p></div>
+      <button onclick="db.auth.signOut().then(()=>location.replace('login.html'))" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--muted);padding:4px 0;margin-top:6px">Déconnexion</button>
     </div>
 
     <!-- Page Content -->
@@ -285,12 +282,8 @@
 
     // ── Init ───────────────────────────────────────────────────────────────────
 
-    async function logout() {
-      await db.auth.signOut();
-      window.location.replace('login.html');
-    }
-
     async function init() {
+      // requireAuth() attend que Supabase restaure la session — évite le bug getUser() = null
       const { user, profile } = await requireAuth();
 
       try {
