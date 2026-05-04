@@ -430,7 +430,7 @@
         const today = new Date().toISOString().split('T')[0];
         const [mRes, calRes, cRes, pRes, streak] = await Promise.all([
           db.from('meals').select('*, profiles(name)').eq('couple_id', couple.id).order('date', { ascending: false }).limit(3),
-          db.from('meals').select('user_id, calories').eq('couple_id', couple.id).eq('date', today),
+          db.from('meals').select('*').eq('couple_id', couple.id).eq('date', today),
           db.from('challenges').select('*, profiles(name)').eq('couple_id', couple.id).order('created_at', { ascending: false }).limit(5),
           db.from('poop').select('*, profiles(name)').eq('couple_id', couple.id).order('logged_at', { ascending: false }).limit(3),
           getOrCreateStreak(couple.id)
