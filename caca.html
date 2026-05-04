@@ -20,14 +20,25 @@
   </div>
 </div>
 
-<div class="nav">
-      <a href="index.html"><span class="ni">🏠</span><span class="nl">Accueil</span></a>
-      <a href="repas.html"><span class="ni">🍽️</span><span class="nl">Repas</span></a>
-      <a href="sport.html"><span class="ni">⚡</span><span class="nl">Sport</span></a>
-      <a href="objectifs.html"><span class="ni">🎯</span><span class="nl">Objectifs</span></a>
-      <a href="caca.html" class="active"><span class="ni">💩</span><span class="nl">Journal</span></a>
+<nav class="nav">
+  <a href="index.html"><span class="ni">🏠</span><span class="nl">Accueil</span></a>
+  <a href="repas.html"><span class="ni">🍽️</span><span class="nl">Repas</span></a>
+  <a href="sport.html"><span class="ni">⚡</span><span class="nl">Sport</span></a>
+  <a href="objectifs.html"><span class="ni">🎯</span><span class="nl">Objectifs</span></a>
+  <a href="caca.html" class="active"><span class="ni">💩</span><span class="nl">Journal</span><div class="nd"></div></a>
+</nav>
+
+<!-- Modal -->
+<div class="overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle" id="modal-title">Enregistrer un passage 💩</div>
+
+    <div class="ig">
+      <label>Type (Échelle de Bristol)</label>
+      <div id="bristol-picker" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:8px"></div>
+      <div id="bristol-info" class="card" style="padding:10px 12px"></div>
     </div>
-  </div>
     <div class="ig" style="margin-top:12px;margin-bottom:20px">
       <label>Notes (optionnel)</label>
       <input class="inp" id="p-notes" placeholder="Après-café, post-sport...">

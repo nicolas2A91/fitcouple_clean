@@ -21,14 +21,29 @@
   </div>
 </div>
 
-<div class="nav">
-      <a href="index.html"><span class="ni">🏠</span><span class="nl">Accueil</span></a>
-      <a href="repas.html"><span class="ni">🍽️</span><span class="nl">Repas</span></a>
-      <a href="sport.html"><span class="ni">⚡</span><span class="nl">Sport</span></a>
-      <a href="objectifs.html" class="active"><span class="ni">🎯</span><span class="nl">Objectifs</span></a>
-      <a href="caca.html"><span class="ni">💩</span><span class="nl">Journal</span></a>
-    </div>
-  </div>
+<nav class="nav">
+  <a href="index.html"><span class="ni">🏠</span><span class="nl">Accueil</span></a>
+  <a href="repas.html"><span class="ni">🍽️</span><span class="nl">Repas</span></a>
+  <a href="sport.html"><span class="ni">⚡</span><span class="nl">Sport</span></a>
+  <a href="objectifs.html" class="active"><span class="ni">🎯</span><span class="nl">Objectifs</span><div class="nd"></div></a>
+  <a href="caca.html"><span class="ni">💩</span><span class="nl">Journal</span></a>
+</nav>
+
+<!-- Modal -->
+<div class="overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal" style="max-height:85vh;overflow-y:auto">
+    <div class="mhandle"></div>
+    <div class="mtitle">Nouvel objectif 🎯</div>
+
+    <div class="slabel" style="padding-top:0">Templates</div>
+    <div class="tags" id="templates"></div>
+
+    <form onsubmit="addObjective(event)">
+      <div class="ig"><label>Titre</label><input class="inp" id="o-title" placeholder="Mon objectif..." required></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="ig"><label>Cible</label><input class="inp" id="o-target" type="number" value="30" required></div>
+        <div class="ig"><label>Unité</label><input class="inp" id="o-unit" placeholder="jours, km..." value="jours" required></div>
+      </div>
       <div class="ig"><label>Échéance (optionnel)</label><input class="inp" id="o-deadline" type="date"></div>
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
         <input type="checkbox" id="o-shared" style="width:18px;height:18px;accent-color:var(--green);cursor:pointer">

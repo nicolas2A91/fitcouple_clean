@@ -22,14 +22,29 @@
   </div>
 </div>
 
-<div class="nav">
-      <a href="index.html"><span class="ni">🏠</span><span class="nl">Accueil</span></a>
-      <a href="repas.html"><span class="ni">🍽️</span><span class="nl">Repas</span></a>
-      <a href="sport.html" class="active"><span class="ni">⚡</span><span class="nl">Sport</span></a>
-      <a href="objectifs.html"><span class="ni">🎯</span><span class="nl">Objectifs</span></a>
-      <a href="caca.html"><span class="ni">💩</span><span class="nl">Journal</span></a>
-    </div>
-  </div>
+<nav class="nav">
+  <a href="index.html"><span class="ni">🏠</span><span class="nl">Accueil</span></a>
+  <a href="repas.html"><span class="ni">🍽️</span><span class="nl">Repas</span></a>
+  <a href="sport.html" class="active"><span class="ni">⚡</span><span class="nl">Sport</span><div class="nd"></div></a>
+  <a href="objectifs.html"><span class="ni">🎯</span><span class="nl">Objectifs</span></a>
+  <a href="caca.html"><span class="ni">💩</span><span class="nl">Journal</span></a>
+</nav>
+
+<!-- Modal -->
+<div class="overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle">Nouveau défi ⚡</div>
+
+    <div class="slabel" style="padding-top:0">Suggestions rapides</div>
+    <div class="tags" id="suggestions"></div>
+
+    <form onsubmit="addChallenge(event)">
+      <div class="ig"><label>Nom du défi</label><input class="inp" id="c-title" placeholder="Ex: 10 000 pas chacun" required></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="ig"><label>Objectif</label><input class="inp" id="c-target" type="number" value="10000" required></div>
+        <div class="ig"><label>Unité</label><input class="inp" id="c-unit" placeholder="pas, km..." value="pas" required></div>
+      </div>
       <div class="ig" style="margin-bottom:20px"><label>Description (optionnel)</label><input class="inp" id="c-desc" placeholder="Détails..."></div>
       <button class="btn btn-p" type="submit" id="c-btn">Créer le défi 💪</button>
       <button class="btn btn-g" type="button" style="margin-top:8px" onclick="document.getElementById('modal').classList.remove('open')">Annuler</button>

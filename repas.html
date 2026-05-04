@@ -16,14 +16,34 @@
   <div class="page" id="meals-section"></div>
 </div>
 
-<div class="nav">
-      <a href="index.html"><span class="ni">🏠</span><span class="nl">Accueil</span></a>
-      <a href="repas.html" class="active"><span class="ni">🍽️</span><span class="nl">Repas</span></a>
-      <a href="sport.html"><span class="ni">⚡</span><span class="nl">Sport</span></a>
-      <a href="objectifs.html"><span class="ni">🎯</span><span class="nl">Objectifs</span></a>
-      <a href="caca.html"><span class="ni">💩</span><span class="nl">Journal</span></a>
+<nav class="nav">
+  <a href="index.html"><span class="ni">🏠</span><span class="nl">Accueil</span></a>
+  <a href="repas.html" class="active"><span class="ni">🍽️</span><span class="nl">Repas</span><div class="nd"></div></a>
+  <a href="sport.html"><span class="ni">⚡</span><span class="nl">Sport</span></a>
+  <a href="objectifs.html"><span class="ni">🎯</span><span class="nl">Objectifs</span></a>
+  <a href="caca.html"><span class="ni">💩</span><span class="nl">Journal</span></a>
+</nav>
+
+<!-- Modal ajouter/modifier -->
+<div class="overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle" id="modal-title">Ajouter un repas</div>
+    <div class="ig">
+      <label>Type de repas</label>
+      <select class="inp" id="m-type">
+        <option value="petit_dej">🌅 Petit-déj</option>
+        <option value="dejeuner" selected>☀️ Déjeuner</option>
+        <option value="diner">🌙 Dîner</option>
+        <option value="snack">⚡ Snack</option>
+      </select>
     </div>
+    <div class="ig"><label>Qu'est-ce que tu as mangé ?</label><input class="inp" id="m-name" placeholder="Salade césar, sushi, pizza..."></div>
+    <div class="ig" style="margin-bottom:20px"><label>Notes (optionnel)</label><input class="inp" id="m-notes" placeholder="Fait maison, resto..."></div>
+    <button class="btn btn-p" id="m-btn" onclick="saveMeal()">Ajouter 🍽️</button>
+    <button class="btn btn-g" style="margin-top:8px" onclick="document.getElementById('modal').classList.remove('open')">Annuler</button>
   </div>
+</div>
 
 <script>
 let profile, selDate = new Date().toISOString().split('T')[0]
