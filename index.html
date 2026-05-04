@@ -148,7 +148,7 @@
           </div>
           <div style="margin-bottom:6px">
             <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px">
-              <span>Objectif 2000 kcal</span>
+              <span id="dash-cal-goal-label">Objectif 2000 kcal</span>
               <span id="dash-cal-pct">0%</span>
             </div>
             <div style="height:6px;border-radius:3px;background:rgba(0,0,0,0.07);overflow:hidden">
@@ -314,13 +314,15 @@
         const calEntries = calRes.data || [];
         const myCal  = calEntries.filter(e => e.user_id === session.user.id).reduce((s, e) => s + (e.calories||0), 0);
         const parCal = calEntries.filter(e => e.user_id !== session.user.id).reduce((s, e) => s + (e.calories||0), 0);
-        const calGoal  = 2000;
+        const calGoal  = profile.name === 'Anna' ? 1700 : 2200;
+        const parGoal  = partnerProfile?.name === 'Anna' ? 1700 : 2200;
         const calPct   = Math.min(100, Math.round((myCal / calGoal) * 100));
         const calColor = myCal === 0 ? '#E24B4A' : myCal < 1500 ? '#639922' : myCal < 2200 ? '#F59E0B' : '#E24B4A';
         document.getElementById('dash-my-cal').textContent       = myCal || '—';
         document.getElementById('dash-my-cal').style.color       = myCal ? calColor : 'var(--muted)';
         document.getElementById('dash-partner-cal').textContent  = parCal || '—';
         document.getElementById('dash-cal-pct').textContent      = calPct + '%';
+        document.getElementById('dash-cal-goal-label').textContent = 'Objectif ' + calGoal + ' kcal';
         document.getElementById('dash-cal-bar').style.width      = calPct + '%';
         document.getElementById('dash-cal-bar').style.background = calColor;
 
