@@ -218,14 +218,14 @@ function objCard(o, isShared) {
   return `<div class="card">
     <div class="card-hdr">
       <span class="card-title">${o.title}</span>
-      <div style="display:flex;align-items:center;gap:4px">
+      <div style="display:flex;align-items:center;gap:2px">
         ${deadline}
         ${isOwner ? `
           <button onclick="openEditObjBtn(this)"
             data-id="${o.id}" data-title="${safeTitle}" data-target="${o.target}" data-unit="${safeUnit}" data-current="${o.current_value}" data-deadline="${safeDeadline}"
-            style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 3px">✏️</button>
+            style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:0 4px">✏️</button>
           <button onclick="deleteObj('${o.id}')"
-            style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:0 2px">🗑️</button>
+            style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:0 4px">🗑️</button>
         ` : ''}
       </div>
     </div>
