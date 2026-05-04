@@ -212,8 +212,8 @@ function objCard(o, isShared) {
   const pct = Math.min(100, Math.round((o.current_value / o.target) * 100))
   const deadline = o.deadline ? `<span style="font-size:11px;color:var(--muted)">📅 ${new Date(o.deadline).toLocaleDateString('fr-FR',{day:'numeric',month:'short'})}</span>` : ''
   const isOwner = o.user_id === profile.id
-  const safeTitle = (o.title||'').replace(/"/g,'&quot;')
-  const safeUnit = (o.unit||'').replace(/"/g,'&quot;')
+  const safeTitle = encodeURIComponent(o.title||'')
+  const safeUnit = encodeURIComponent(o.unit||'')
   const safeDeadline = o.deadline || ''
   return `<div class="card">
     <div class="card-hdr">
@@ -277,9 +277,9 @@ async function saveObjProgress() {
 
 function openEditObjBtn(btn) {
   editingObjId = btn.dataset.id
-  document.getElementById('e-title').value = btn.dataset.title
+  document.getElementById('e-title').value = decodeURIComponent(btn.dataset.title)
   document.getElementById('e-target').value = btn.dataset.target
-  document.getElementById('e-unit').value = btn.dataset.unit
+  document.getElementById('e-unit').value = decodeURIComponent(btn.dataset.unit)
   document.getElementById('e-current').value = btn.dataset.current
   document.getElementById('e-deadline').value = btn.dataset.deadline
   document.getElementById('modal-edit').classList.add('open')
