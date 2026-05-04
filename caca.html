@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>FitCouple — Journal 💩</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="config.js"></script>
+</head>
+<body>
+<div class="app">
+  <div class="hdr"><h1>Journal 💩</h1><p>Santé intestinale du couple</p></div>
+  <div class="page">
+    <div id="stats-section"></div>
+    <button class="btn btn-p" style="margin-bottom:16px" onclick="document.getElementById('modal').classList.add('open')">+ Enregistrer un passage</button>
+    <div id="today-section"></div>
+    <div id="history-section"></div>
+    <div id="tip-section"></div>
+  </div>
+</div>
+
+<nav class="nav">
+  <a href="index.html"><span class="ni">🏠</span><span class="nl">Home</span></a>
+  <a href="repas.html"><span class="ni">📅</span><span class="nl">Repas</span></a>
+  <a href="sport.html"><span class="ni">⚡</span><span class="nl">Sport</span></a>
+  <a href="caca.html" class="active"><span class="ni">💩</span><span class="nl">Caca</span><div class="nd"></div></a>
+  <a href="objectifs.html"><span class="ni">🎯</span><span class="nl">Objectifs</span></a>
+</nav>
+
+<!-- Modal -->
+<div class="overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle">Enregistrer un passage 💩</div>
+
+    <div class="ig">
+      <label>Choisir le type (Échelle de Bristol)</label>
+      <div id="bristol-picker" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:8px"></div>
+      <div id="bristol-info" class="card" style="padding:10px 12px;margin-bottom:0"></div>
+    </div>
+    <div class="ig" style="margin-top:12px;margin-bottom:20px">
+      <label>Notes (optionnel)</label>
+      <input class="inp" id="p-notes" placeholder="Après-café, post-sport...">
+    </div>
+    <button class="btn btn-p" onclick="addLog()" id="p-btn">Enregistrer 💾</button>
+    <button class="btn btn-g" style="margin-top:8px" onclick="document.getElementById('modal').classList.remove('open')">Annuler</button>
+  </div>
+</div>
+
+<script>
+let profile, partner, selectedType = 4
+const today = new Date().toISOString().split('T')[0]
+const SCORE_BADGE = {'A+':'b-green','A':'b-teal','B':'b-amber','C':'b-coral','D':'b-coral'}
+const SCORE_COLOR = {'A+':'var(--anna)','A':'var(--green)','B':'var(--amber)','C':'var(--coral)','D':'var(--coral)'}
+
+function closeModal(e) { if(e.target===document.getElementById('modal')) document.getElementById('modal').classList.remove('open') }
+
+function buildBristolPicker() {
+  document.getElementById('bristol-picker').innerHTML = [1,2,3,4,5,6,7].map(t => `
+    <button type="button" id="bt-${t}" onclick="selectType(${t})" style="
+      padding:8px 4px;border-radius:8px;border:none;cursor:pointer;font-size:20px;text-align:center;
+      background:${t===selectedType?'var(--green)':'var(--card)'};
+      outline:0.5px solid ${t===selectedType?'var(--green)':'var(--border)'};transition:all .15s"
+    >${BRISTOL_EMOJI[t]}</button>`).join('')
+  updateBristolInfo()
+}
+
+function selectType(t) {
+  selectedType = t
+  document.querySelectorAll('[id^="bt-"]').forEach((b,i) => {
+    const n = i+1
+    b.style.background = n===t ? 'var(--green)' : 'var(--card)'
+    b.style.outline = `0.5px solid ${n===t?'var(--green)':'var(--border)'}`
+  })
+  updateBristolInfo()
+}
+
+function updateBristolInfo() {
+  const score = BRISTOL_SCORE[selectedType]
+  document.getElementById('bristol-info').innerHTML = `
+    <div style="font-size:13px;font-weight:500;margin-bottom:3px">${BRISTOL_EMOJI[selectedType]} Type ${selectedType} — ${BRISTOL_LABELS?.[selectedType]||''}</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px">${BRISTOL_DESC[selectedType]}</div>
+    <span class="badge ${SCORE_BADGE[score]}">Score : ${score}</span>`
+}
+
+// We need BRISTOL_LABELS too
+const BRISTOL_LABELS = {1:'Dure, séparée',2:'Boudinée, grumelée',3:'Craquelée',4:'Banane lisse',5:'Morceaux doux',6:'Mou, étalé',7:'Liquide'}
+
+async function addLog() {
+  const btn = document.getElementById('p-btn')
+  btn.textContent = '...'
+  const score = BRISTOL_SCORE[selectedType]
+  await db.from('poop_logs').insert({
+    user_id: profile.id, couple_id: profile.couple_id,
+    bristol_type: selectedType,
+    notes: document.getElementById('p-notes').value || null,
+    score
+  })
+  document.getElementById('p-notes').value = ''
+  document.getElementById('modal').classList.remove('open')
+  btn.textContent = 'Enregistrer 💾'
+  await loadLogs()
+}
+
+async function loadLogs() {
+  const { data: logs } = await db.from('poop_logs')
+    .select('*, profiles(name)')
+    .eq('couple_id', profile.couple_id)
+    .order('logged_at', { ascending: false })
+    .limit(20)
+
+  const all = logs || []
+  const todayLogs = all.filter(l => l.logged_at.startsWith(today))
+  const myLogs = all.filter(l => l.user_id === profile.id)
+
+  // Compute champion
+  const scores = {}
+  all.forEach(l => {
+    if (!scores[l.user_id]) scores[l.user_id] = 0
+    if (l.score === 'A+' || l.score === 'A') scores[l.user_id]++
+  })
+  const myS = scores[profile.id] || 0
+  const parS = partner ? (scores[partner.id] || 0) : 0
+  const champion = myS > parS ? profile.name : parS > myS && partner ? partner.name : '='
+
+  const avgScore = myLogs.length ? (() => {
+    const order = ['A+','A','B','C','D']
+    const idx = Math.round(myLogs.reduce((s,l) => s + order.indexOf(l.score), 0) / myLogs.length)
+    return order[Math.min(4, Math.max(0, idx))]
+  })() : '-'
+
+  document.getElementById('stats-section').innerHTML = `
+    <div class="stats" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px">
+      <div class="stat"><div class="stat-v" style="color:var(--amber)">${myLogs.length}</div><div class="stat-l">Total (${profile.name})</div></div>
+      <div class="stat"><div class="stat-v" style="color:${SCORE_COLOR[avgScore]||'var(--text)'}">${avgScore}</div><div class="stat-l">Score moyen</div></div>
+      <div class="stat"><div class="stat-v" style="font-size:12px;color:var(--green)">${champion}</div><div class="stat-l">Champion 🏆</div></div>
+    </div>`
+
+  // Today
+  document.getElementById('today-section').innerHTML = `
+    <div class="slabel">Aujourd'hui</div>
+    ${todayLogs.length === 0
+      ? '<div class="card" style="text-align:center;color:var(--muted);font-size:13px;padding:16px">Aucun passage enregistré aujourd\'hui</div>'
+      : `<div class="card">${todayLogs.map((l,i) => {
+          const time = new Date(l.logged_at).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})
+          const isMe = l.user_id === profile.id
+          return `<div class="row-item" ${i===0?'style="padding-top:0"':''}>
+            <div class="av ${isMe?'av-a':'av-b'}" style="font-size:10px">${l.profiles?.name?.[0]||'?'}</div>
+            <div style="flex:1">
+              <div style="font-size:13px">${BRISTOL_EMOJI[l.bristol_type]} Type ${l.bristol_type} · ${time}</div>
+              <div style="font-size:11px;color:var(--muted)">${l.notes||BRISTOL_DESC[l.bristol_type]}</div>
+            </div>
+            <span class="badge ${SCORE_BADGE[l.score]||'b-gray'}">${l.score}</span>
+          </div>`
+        }).join('')}</div>`}
+  `
+
+  // History
+  const old = all.filter(l => !l.logged_at.startsWith(today)).slice(0, 10)
+  document.getElementById('history-section').innerHTML = old.length === 0 ? '' : `
+    <div class="slabel">Historique récent</div>
+    <div class="card">${old.map((l,i) => {
+      const dt = new Date(l.logged_at)
+      const dateStr = dt.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})
+      const time = dt.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})
+      const isMe = l.user_id === profile.id
+      return `<div class="row-item" ${i===0?'style="padding-top:0"':''}>
+        <div class="av ${isMe?'av-a':'av-b'}" style="font-size:10px">${l.profiles?.name?.[0]||'?'}</div>
+        <div style="flex:1">
+          <div style="font-size:12px">${BRISTOL_EMOJI[l.bristol_type]} Type ${l.bristol_type}</div>
+          <div style="font-size:11px;color:var(--muted)">${dateStr} à ${time}</div>
+        </div>
+        <span class="badge ${SCORE_BADGE[l.score]||'b-gray'}">${l.score}</span>
+      </div>`
+    }).join('')}</div>`
+
+  // Tip
+  const lastMine = myLogs[0]
+  if (lastMine && lastMine.bristol_type <= 2) {
+    document.getElementById('tip-section').innerHTML = `
+      <div class="card" style="border:.5px solid var(--green-dim);background:rgba(29,158,117,.05);margin-top:4px">
+        <div style="font-size:12px;color:var(--green-light);line-height:1.6">
+          💧 Conseil : Ton dernier passage était un peu dur. Essaie de boire plus d'eau et d'ajouter des fibres à tes repas !
+        </div>
+      </div>`
+  } else {
+    document.getElementById('tip-section').innerHTML = ''
+  }
+}
+
+async function init() {
+  const auth = await requireAuth()
+  if (!auth) return
+  profile = auth.profile
+  const { data } = await db.from('profiles').select('*').eq('couple_id', profile.couple_id).neq('id', profile.id).single()
+  partner = data
+  buildBristolPicker()
+  await loadLogs()
+}
+init()
+</script>
+</body>
+</html>

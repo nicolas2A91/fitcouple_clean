@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>FitCouple — Sport</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="config.js"></script>
+</head>
+<body>
+<div class="app">
+  <div class="hdr"><h1>Sport ⚡</h1><p>Défis &amp; performances</p></div>
+  <div class="page">
+    <div id="date-scroll" class="datescroll"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <span id="sel-date-label" style="font-size:13px;color:var(--muted);text-transform:capitalize"></span>
+      <button class="btn btn-p" style="width:auto;padding:7px 14px;font-size:12px" onclick="document.getElementById('modal').classList.add('open')">+ Défi</button>
+    </div>
+    <div id="challenges-list"></div>
+  </div>
+</div>
+
+<nav class="nav">
+  <a href="index.html"><span class="ni">🏠</span><span class="nl">Home</span></a>
+  <a href="repas.html"><span class="ni">📅</span><span class="nl">Repas</span></a>
+  <a href="sport.html" class="active"><span class="ni">⚡</span><span class="nl">Sport</span><div class="nd"></div></a>
+  <a href="caca.html"><span class="ni">💩</span><span class="nl">Caca</span></a>
+  <a href="objectifs.html"><span class="ni">🎯</span><span class="nl">Objectifs</span></a>
+</nav>
+
+<!-- Modal -->
+<div class="overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mtitle">Nouveau défi ⚡</div>
+
+    <div class="slabel" style="padding-top:0">Suggestions rapides</div>
+    <div class="tags" id="suggestions"></div>
+
+    <form onsubmit="addChallenge(event)">
+      <div class="ig"><label>Nom du défi</label><input class="inp" id="c-title" placeholder="Ex: 10 000 pas chacun" required></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="ig"><label>Objectif</label><input class="inp" id="c-target" type="number" value="10000" required></div>
+        <div class="ig"><label>Unité</label><input class="inp" id="c-unit" placeholder="pas, km..." value="pas" required></div>
+      </div>
+      <div class="ig" style="margin-bottom:20px"><label>Description (optionnel)</label><input class="inp" id="c-desc" placeholder="Détails..."></div>
+      <button class="btn btn-p" type="submit" id="c-btn">Créer le défi 💪</button>
+      <button class="btn btn-g" type="button" style="margin-top:8px" onclick="document.getElementById('modal').classList.remove('open')">Annuler</button>
+    </form>
+  </div>
+</div>
+
+<script>
+let profile, partner, selDate = new Date().toISOString().split('T')[0]
+const today = new Date().toISOString().split('T')[0]
+
+const SUGGESTIONS = [
+  { title:'10 000 pas chacun', target:10000, unit:'pas' },
+  { title:'Séance de sport', target:1, unit:'séance' },
+  { title:'Courir 5km', target:5, unit:'km' },
+  { title:'30 min cardio', target:30, unit:'min' },
+  { title:'50 squats', target:50, unit:'squats' },
+  { title:'20 pompes', target:20, unit:'pompes' },
+]
+
+function closeModal(e) { if(e.target===document.getElementById('modal')) document.getElementById('modal').classList.remove('open') }
+
+function buildDateScroll() {
+  const html = [-2,-1,0,1,2].map(off => {
+    const d = new Date(Date.now() + off*86400000)
+    const iso = d.toISOString().split('T')[0]
+    const isT = iso === today
+    const isSel = iso === selDate
+    return `<button class="dchip ${isSel?'sel':''} ${isT&&!isSel?'today-chip':''}" onclick="changeDay('${iso}')">
+      <div class="dday">${d.toLocaleDateString('fr-FR',{weekday:'short'})}</div>
+      <div class="dnum">${d.getDate()}</div>
+    </button>`
+  }).join('')
+  document.getElementById('date-scroll').innerHTML = html
+  document.getElementById('sel-date-label').textContent =
+    new Date(selDate+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})
+}
+
+async function changeDay(iso) { selDate = iso; buildDateScroll(); await loadChallenges() }
+
+async function loadChallenges() {
+  const { data: challenges } = await db.from('challenges')
+    .select('*, challenge_progress(*, profiles(name))')
+    .eq('challenge_date', selDate)
+    .eq('couple_id', profile.couple_id)
+
+  if (!challenges || challenges.length === 0) {
+    document.getElementById('challenges-list').innerHTML = `
+      <div class="empty"><div class="empty-i">🏋️</div><p>Aucun défi ce jour</p>
+      <p style="font-size:11px;margin-top:6px">Ajoutez-en un pour vous challenger !</p></div>`
+    return
+  }
+
+  document.getElementById('challenges-list').innerHTML = challenges.map(c => {
+    const myP = c.challenge_progress?.find(p => p.user_id === profile.id)
+    const parP = c.challenge_progress?.find(p => p.user_id !== profile.id)
+    const myPct = c.target > 0 ? Math.min(100, Math.round(((myP?.value||0)/c.target)*100)) : 0
+    const parPct = c.target > 0 ? Math.min(100, Math.round(((parP?.value||0)/c.target)*100)) : 0
+
+    return `<div class="card">
+      <div class="card-hdr">
+        <span class="card-title" style="font-size:14px">${c.title}</span>
+        ${myP?.completed ? '<span class="badge b-green">TERMINÉ ✓</span>' : ''}
+      </div>
+      ${c.description ? `<p style="font-size:12px;color:var(--muted);margin-bottom:10px">${c.description}</p>` : ''}
+
+      <div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <div style="display:flex;align-items:center;gap:6px">
+            <div class="av av-a" style="width:18px;height:18px;font-size:9px">${profile.name[0]}</div>
+            <span style="font-size:12px;color:var(--muted)">${profile.name}</span>
+          </div>
+          <span style="font-size:12px;color:var(--anna)">${myP?.value||0}/${c.target} ${c.unit}</span>
+        </div>
+        <div class="prog"><div class="prog-fill" style="width:${myPct}%;background:${myP?.completed?'var(--anna)':'var(--green)'}"></div></div>
+      </div>
+
+      ${partner ? `<div style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <div style="display:flex;align-items:center;gap:6px">
+            <div class="av av-b" style="width:18px;height:18px;font-size:9px">${partner.name[0]}</div>
+            <span style="font-size:12px;color:var(--muted)">${partner.name}</span>
+          </div>
+          <span style="font-size:12px;color:var(--nico)">${parP?.value||0}/${c.target} ${c.unit}</span>
+        </div>
+        <div class="prog"><div class="prog-fill" style="width:${parPct}%;background:var(--nico)"></div></div>
+      </div>` : ''}
+
+      ${!myP?.completed
+        ? `<button class="btn btn-o" style="font-size:12px;padding:8px" onclick="updateProgress('${c.id}',${myP?.value||0},${c.target})">+ Mettre à jour ma progression</button>`
+        : `<div style="text-align:center;font-size:13px;color:var(--anna);padding:6px 0">🎉 Bravo ! Défi terminé !</div>`}
+    </div>`
+  }).join('')
+}
+
+async function updateProgress(id, current, target) {
+  const step = Math.max(1, Math.round(target * 0.1))
+  const newVal = Math.min(target, current + step)
+  await db.from('challenge_progress').upsert({
+    challenge_id: id, user_id: profile.id,
+    value: newVal, completed: newVal >= target,
+    updated_at: new Date().toISOString()
+  }, { onConflict: 'challenge_id,user_id' })
+  await loadChallenges()
+}
+
+function pickSuggestion(s) {
+  document.getElementById('c-title').value = s.title
+  document.getElementById('c-target').value = s.target
+  document.getElementById('c-unit').value = s.unit
+  document.querySelectorAll('.tag').forEach(t => t.classList.toggle('sel', t.textContent === s.title))
+}
+
+async function addChallenge(e) {
+  e.preventDefault()
+  const btn = document.getElementById('c-btn')
+  btn.textContent = '...'
+  await db.from('challenges').insert({
+    couple_id: profile.couple_id,
+    title: document.getElementById('c-title').value,
+    target: +document.getElementById('c-target').value,
+    unit: document.getElementById('c-unit').value,
+    description: document.getElementById('c-desc').value || null,
+    type: 'custom',
+    challenge_date: selDate,
+    created_by: profile.id
+  })
+  document.getElementById('modal').classList.remove('open')
+  btn.textContent = 'Créer le défi 💪'
+  await loadChallenges()
+}
+
+async function init() {
+  const auth = await requireAuth()
+  if (!auth) return
+  profile = auth.profile
+  const { data } = await db.from('profiles').select('*').eq('couple_id', profile.couple_id).neq('id', profile.id).single()
+  partner = data
+
+  document.getElementById('suggestions').innerHTML = SUGGESTIONS.map(s =>
+    `<button class="tag" onclick='pickSuggestion(${JSON.stringify(s)})'>${s.title}</button>`
+  ).join('')
+
+  buildDateScroll()
+  await loadChallenges()
+}
+init()
+</script>
+</body>
+</html>

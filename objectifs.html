@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>FitCouple — Objectifs</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="config.js"></script>
+</head>
+<body>
+<div class="app">
+  <div class="hdr"><h1>Objectifs 🎯</h1><p>Vos challenges long terme</p></div>
+  <div class="page">
+    <div id="streak-section"></div>
+    <button class="btn btn-p" style="margin-bottom:16px" onclick="document.getElementById('modal').classList.add('open')">+ Nouvel objectif</button>
+    <div id="shared-section"></div>
+    <div id="personal-section"></div>
+    <div id="done-section"></div>
+  </div>
+</div>
+
+<nav class="nav">
+  <a href="index.html"><span class="ni">🏠</span><span class="nl">Home</span></a>
+  <a href="repas.html"><span class="ni">📅</span><span class="nl">Repas</span></a>
+  <a href="sport.html"><span class="ni">⚡</span><span class="nl">Sport</span></a>
+  <a href="caca.html"><span class="ni">💩</span><span class="nl">Caca</span></a>
+  <a href="objectifs.html" class="active"><span class="ni">🎯</span><span class="nl">Objectifs</span><div class="nd"></div></a>
+</nav>
+
+<!-- Modal -->
+<div class="overlay" id="modal" onclick="closeModal(event)">
+  <div class="modal" style="max-height:85vh;overflow-y:auto">
+    <div class="mhandle"></div>
+    <div class="mtitle">Nouvel objectif 🎯</div>
+
+    <div class="slabel" style="padding-top:0">Templates</div>
+    <div class="tags" id="templates"></div>
+
+    <form onsubmit="addObjective(event)">
+      <div class="ig"><label>Titre</label><input class="inp" id="o-title" placeholder="Mon objectif..." required></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="ig"><label>Cible</label><input class="inp" id="o-target" type="number" value="30" required></div>
+        <div class="ig"><label>Unité</label><input class="inp" id="o-unit" placeholder="jours, km..." value="jours" required></div>
+      </div>
+      <div class="ig"><label>Échéance (optionnel)</label><input class="inp" id="o-deadline" type="date"></div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
+        <input type="checkbox" id="o-shared" style="width:18px;height:18px;accent-color:var(--green);cursor:pointer">
+        <label for="o-shared" style="font-size:13px;color:var(--muted);cursor:pointer" id="shared-label">Objectif commun avec mon/ma chéri(e)</label>
+      </div>
+      <button class="btn btn-p" type="submit" id="o-btn">Créer l'objectif 🎯</button>
+      <button class="btn btn-g" type="button" style="margin-top:8px" onclick="document.getElementById('modal').classList.remove('open')">Annuler</button>
+    </form>
+  </div>
+</div>
+
+<script>
+let profile
+
+const TEMPLATES = [
+  { title:"Boire 2L d'eau/jour", target:30, unit:'jours', shared:false },
+  { title:'Courir 100km ce mois', target:100, unit:'km', shared:true },
+  { title:'5 fruits et légumes/jour', target:30, unit:'jours', shared:true },
+  { title:'Zéro sucre ajouté 2 semaines', target:14, unit:'jours', shared:true },
+  { title:'Méditer 10 min/jour', target:21, unit:'jours', shared:false },
+  { title:'Dormir 8h/nuit', target:14, unit:'nuits', shared:false },
+]
+
+function closeModal(e) { if(e.target===document.getElementById('modal')) document.getElementById('modal').classList.remove('open') }
+
+function pickTemplate(t) {
+  document.getElementById('o-title').value = t.title
+  document.getElementById('o-target').value = t.target
+  document.getElementById('o-unit').value = t.unit
+  document.getElementById('o-shared').checked = t.shared
+  document.querySelectorAll('.tag').forEach(el => el.classList.toggle('sel', el.dataset.title === t.title))
+}
+
+async function loadAll() {
+  const [objRes, streakRes] = await Promise.all([
+    db.from('objectives').select('*, profiles(name)').eq('couple_id', profile.couple_id).order('created_at', {ascending:false}),
+    db.from('streaks').select('*').eq('couple_id', profile.couple_id).single()
+  ])
+
+  const objs = objRes.data || []
+  const streak = streakRes.data || { current_streak:0, best_streak:0 }
+  const active = objs.filter(o => !o.completed)
+  const done = objs.filter(o => o.completed)
+
+  // Streak card
+  const bars = Array.from({length:7}, (_,i) => {
+    const filled = i < Math.min(7, streak.current_streak)
+    return `<div style="flex:1;height:6px;border-radius:3px;background:${filled?'var(--green)':'var(--border)'}"></div>`
+  }).join('')
+
+  document.getElementById('streak-section').innerHTML = `
+    <div class="streak">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Streak couple</div>
+          <div style="font-size:38px;font-weight:800;color:var(--amber);line-height:1">
+            ${streak.current_streak}
+            <span style="font-size:14px;color:var(--muted);font-weight:400;margin-left:4px">jours</span>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:3px">Record</div>
+          <div style="font-size:24px;font-weight:700;color:var(--muted)">${streak.best_streak}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:4px;margin-top:12px">${bars}</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:5px;text-align:right">
+        ${streak.current_streak >= 7 ? '🔥 Une semaine de suite !' : `${7-Math.min(7,streak.current_streak)} jours pour 7 de suite`}
+      </div>
+    </div>`
+
+  // Shared objectives
+  const shared = active.filter(o => o.is_shared)
+  document.getElementById('shared-section').innerHTML = shared.length === 0 ? '' : `
+    <div class="slabel">🤝 Objectifs communs</div>
+    ${shared.map(o => objCard(o, true)).join('')}`
+
+  // Personal
+  const personal = active.filter(o => !o.is_shared)
+  document.getElementById('personal-section').innerHTML = personal.length === 0 ? '' : `
+    <div class="slabel">👤 Mes objectifs</div>
+    ${personal.map(o => objCard(o, false)).join('')}`
+
+  // Done
+  document.getElementById('done-section').innerHTML = done.length === 0 ? '' : `
+    <div class="slabel">✅ Accomplis (${done.length})</div>
+    <div class="card">${done.map((o,i) => `
+      <div class="row-item" ${i===0?'style="padding-top:0"':''}>
+        <span style="font-size:14px">🏆</span>
+        <div style="flex:1;font-size:13px;color:var(--muted);text-decoration:line-through">${o.title}</div>
+        <span class="badge b-green">FAIT</span>
+      </div>`).join('')}</div>`
+
+  if (active.length === 0) {
+    document.getElementById('personal-section').innerHTML = `
+      <div class="empty"><div class="empty-i">🎯</div><p>Aucun objectif actif</p>
+      <p style="font-size:11px;margin-top:6px">Fixez-vous des objectifs ensemble !</p></div>`
+  }
+}
+
+function objCard(o, isShared) {
+  const pct = Math.min(100, Math.round((o.current_value / o.target) * 100))
+  const deadline = o.deadline ? `<span style="font-size:11px;color:var(--muted)">📅 ${new Date(o.deadline).toLocaleDateString('fr-FR',{day:'numeric',month:'short'})}</span>` : ''
+  return `<div class="card">
+    <div class="card-hdr"><span class="card-title">${o.title}</span>${deadline}</div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px">
+      <span style="color:var(--muted)">${o.current_value} / ${o.target} ${o.unit}</span>
+      <span style="color:var(--green);font-weight:600">${pct}%</span>
+    </div>
+    <div class="prog" style="margin-bottom:10px">
+      <div class="prog-fill" style="width:${pct}%;background:${isShared?'var(--green)':'var(--anna)'}"></div>
+    </div>
+    <button class="${isShared?'btn btn-o':'btn btn-g'}" style="font-size:12px;padding:7px" onclick="increment('${o.id}',${o.current_value},${o.target})">
+      + Progresser
+    </button>
+  </div>`
+}
+
+async function increment(id, current, target) {
+  const step = Math.max(1, Math.round(target * 0.05))
+  const newVal = Math.min(target, current + step)
+  const completed = newVal >= target
+  await db.from('objectives').update({ current_value: newVal, completed }).eq('id', id)
+
+  // Update streak
+  const today = new Date().toISOString().split('T')[0]
+  const yesterday = new Date(Date.now()-86400000).toISOString().split('T')[0]
+  const { data: st } = await db.from('streaks').select('*').eq('couple_id', profile.couple_id).single()
+  if (st) {
+    let cur = st.current_streak
+    if (st.last_active_date === yesterday) cur++
+    else if (st.last_active_date !== today) cur = 1
+    const best = Math.max(cur, st.best_streak)
+    await db.from('streaks').update({ current_streak: cur, best_streak: best, last_active_date: today, updated_at: new Date().toISOString() }).eq('couple_id', profile.couple_id)
+  } else {
+    await db.from('streaks').insert({ couple_id: profile.couple_id, current_streak: 1, best_streak: 1, last_active_date: today })
+  }
+
+  await loadAll()
+}
+
+async function addObjective(e) {
+  e.preventDefault()
+  const btn = document.getElementById('o-btn')
+  btn.textContent = '...'
+  await db.from('objectives').insert({
+    couple_id: profile.couple_id,
+    user_id: profile.id,
+    title: document.getElementById('o-title').value,
+    target: +document.getElementById('o-target').value,
+    unit: document.getElementById('o-unit').value,
+    deadline: document.getElementById('o-deadline').value || null,
+    is_shared: document.getElementById('o-shared').checked,
+    current_value: 0,
+    completed: false
+  })
+  document.getElementById('modal').classList.remove('open')
+  btn.textContent = "Créer l'objectif 🎯"
+  await loadAll()
+}
+
+async function init() {
+  const auth = await requireAuth()
+  if (!auth) return
+  profile = auth.profile
+
+  // Update shared label with partner name
+  const { data: partner } = await db.from('profiles').select('name').eq('couple_id', profile.couple_id).neq('id', profile.id).single()
+  if (partner) document.getElementById('shared-label').textContent = `Objectif commun avec ${partner.name}`
+
+  document.getElementById('templates').innerHTML = TEMPLATES.map(t =>
+    `<button type="button" class="tag" data-title="${t.title}" onclick='pickTemplate(${JSON.stringify(t)})'>${t.title}</button>`
+  ).join('')
+
+  await loadAll()
+}
+init()
+</script>
+</body>
+</html>
