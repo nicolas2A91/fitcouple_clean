@@ -10,6 +10,113 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="light">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="config.js"></script>
+
+  <style>
+    .sticky-bar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--bg, #fff);
+      border-bottom: 0.5px solid rgba(0,0,0,0.08);
+      padding: 10px 12px;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+    .sb-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      padding: 8px 4px;
+      border-radius: 10px;
+      background: rgba(0,0,0,0.04);
+      cursor: pointer;
+    }
+    .sb-icon { font-size: 15px; }
+    .sb-val  { font-size: 15px; font-weight: 600; color: var(--text, #111); }
+    .sb-label{ font-size: 10px; color: var(--muted, #888); }
+    .sb-bar  { width: 100%; height: 3px; border-radius: 2px; background: rgba(0,0,0,0.08); margin-top: 3px; overflow: hidden; }
+    .sb-fill { height: 100%; border-radius: 2px; transition: width 0.5s; }
+
+    .streak-card-new {
+      background: var(--card, #fff);
+      border-radius: 16px;
+      border: 0.5px solid rgba(0,0,0,0.07);
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .streak-flame { font-size: 36px; flex-shrink: 0; }
+    .streak-info  { flex: 1; }
+    .streak-big   { font-size: 34px; font-weight: 700; color: var(--text, #111); line-height: 1; }
+    .streak-sub   { font-size: 12px; color: var(--muted, #888); margin-top: 2px; }
+    .streak-prog-wrap { margin-top: 8px; }
+    .streak-prog-label{ display: flex; justify-content: space-between; font-size: 10px; color: var(--muted, #888); }
+    .streak-prog-bar  { height: 5px; border-radius: 3px; background: rgba(0,0,0,0.08); overflow: hidden; margin-top: 3px; }
+    .streak-prog-fill { height: 100%; border-radius: 3px; background: #E24B4A; transition: width 0.6s; }
+    .streak-milestones{ display: flex; justify-content: space-between; margin-top: 3px; }
+    .milestone { font-size: 9px; color: var(--muted, #aaa); }
+
+    .week-card {
+      background: var(--card, #fff);
+      border-radius: 16px;
+      border: 0.5px solid rgba(0,0,0,0.07);
+      overflow: hidden;
+    }
+    .week-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 14px;
+      border-bottom: 0.5px solid rgba(0,0,0,0.06);
+      font-size: 14px; font-weight: 600; color: var(--text, #111);
+    }
+    .mini-week {
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
+      padding: 10px 10px 4px;
+    }
+    .day-dot  { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .day-lbl  { font-size: 9px; color: var(--muted, #aaa); }
+    .day-circle {
+      width: 26px; height: 26px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: 600;
+    }
+    .day-on    { background: #EAF3DE; color: #27500A; }
+    .day-off   { background: rgba(0,0,0,0.05); color: var(--muted, #aaa); }
+    .day-today { background: #3B6D11; color: #fff; }
+
+    .cat-bars { padding: 6px 12px 12px; display: flex; flex-direction: column; gap: 6px; }
+    .cat-bar-row { display: flex; align-items: center; gap: 8px; }
+    .cat-bar-label { font-size: 11px; color: var(--muted, #888); width: 72px; flex-shrink: 0; }
+    .cat-bar-bg    { flex: 1; height: 6px; border-radius: 3px; background: rgba(0,0,0,0.07); overflow: hidden; }
+    .cat-bar-fill  { height: 100%; border-radius: 3px; transition: width 0.5s; }
+    .cat-bar-count { font-size: 11px; color: var(--muted, #aaa); min-width: 28px; text-align: right; }
+
+    .section-card-new {
+      background: var(--card, #fff);
+      border-radius: 16px;
+      border: 0.5px solid rgba(0,0,0,0.07);
+      overflow: hidden;
+    }
+    .sec-header-new {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 14px;
+      border-bottom: 0.5px solid rgba(0,0,0,0.06);
+    }
+    .sec-title-new { font-size: 14px; font-weight: 600; color: var(--text, #111); }
+    .sec-link-new  { font-size: 12px; color: var(--primary, #7F77DD); text-decoration: none; }
+    .row-item-new {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 14px;
+      border-bottom: 0.5px solid rgba(0,0,0,0.05);
+    }
+    .row-item-new:last-child { border-bottom: none; }
+    .ri-info { flex: 1; min-width: 0; }
+    .ri-name { font-size: 13px; font-weight: 500; color: var(--text, #111); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ri-sub  { font-size: 11px; color: var(--muted, #888); }
+    .empty-row { padding: 16px; text-align: center; font-size: 13px; color: var(--muted, #aaa); }
+  </style>
 </head>
 <body>
   <div class="app">
@@ -19,100 +126,136 @@
       <p>Bienvenue, <span id="user-name">Nico</span> 👋</p>
     </div>
 
+    <!-- Sticky Stats Bar -->
+    <div class="sticky-bar">
+      <div class="sb-item" onclick="document.getElementById('sec-repas').scrollIntoView({behavior:'smooth'})">
+        <span class="sb-icon">🥗</span>
+        <span class="sb-val" id="stat-meals">0</span>
+        <span class="sb-label">Repas</span>
+        <div class="sb-bar"><div class="sb-fill" id="bar-meals" style="background:#639922;width:0%"></div></div>
+      </div>
+      <div class="sb-item" onclick="document.getElementById('sec-defis').scrollIntoView({behavior:'smooth'})">
+        <span class="sb-icon">⚡</span>
+        <span class="sb-val" id="stat-defis">0/0</span>
+        <span class="sb-label">Défis</span>
+        <div class="sb-bar"><div class="sb-fill" id="bar-defis" style="background:#7F77DD;width:0%"></div></div>
+      </div>
+      <div class="sb-item" onclick="document.getElementById('sec-poop').scrollIntoView({behavior:'smooth'})">
+        <span class="sb-icon">💩</span>
+        <span class="sb-val" id="stat-poop">0</span>
+        <span class="sb-label">Passages</span>
+        <div class="sb-bar"><div class="sb-fill" id="bar-poop" style="background:#D85A30;width:0%"></div></div>
+      </div>
+      <div class="sb-item" onclick="document.getElementById('sec-objectifs').scrollIntoView({behavior:'smooth'})">
+        <span class="sb-icon">🎯</span>
+        <span class="sb-val" id="stat-goals">0%</span>
+        <span class="sb-label">Objectifs</span>
+        <div class="sb-bar"><div class="sb-fill" id="bar-goals" style="background:#1D9E75;width:0%"></div></div>
+      </div>
+    </div>
+
     <!-- Page Content -->
     <div class="page">
+
       <!-- Streak Card -->
-      <div class="streak-card">
-        <div class="streak-title">Streak couple</div>
-        <div class="streak-days" id="streak-days">0</div>
-        <div class="streak-label">jours</div>
-        <div class="streak-record">
-          <span>🌱 C'est parti</span>
-          <span class="badge">Record: <span id="best-streak">0</span> jours</span>
+      <div class="streak-card-new">
+        <div class="streak-flame">🔥</div>
+        <div class="streak-info">
+          <div style="display:flex;align-items:baseline;gap:8px">
+            <span class="streak-big" id="streak-days">0</span>
+            <span style="font-size:13px;color:var(--muted)">jours de streak</span>
+          </div>
+          <div class="streak-sub">Record&nbsp;<strong id="best-streak">0</strong>&nbsp;jours</div>
+          <div class="streak-prog-wrap">
+            <div class="streak-prog-label">
+              <span>Progrès vers 7 jours</span>
+              <span id="streak-pct">0%</span>
+            </div>
+            <div class="streak-prog-bar"><div class="streak-prog-fill" id="streak-fill" style="width:0%"></div></div>
+            <div class="streak-milestones">
+              <span class="milestone">0</span>
+              <span class="milestone">7</span>
+              <span class="milestone">14</span>
+              <span class="milestone">30</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Quick Stats Grid -->
-      <div class="quick-grid">
-        <div class="qcard repas" onclick="window.location.href='repas.html'">
-          <span class="qcard-emoji">🥗</span>
-          <div class="qcard-val" id="meal-count">0</div>
-          <div class="qcard-label">Repas</div>
+      <!-- 7 jours -->
+      <div class="week-card">
+        <div class="week-header">
+          <span>7 jours pour 7 de suite</span>
         </div>
-        <div class="qcard defis" onclick="window.location.href='sport.html'">
-          <span class="qcard-emoji">⚡</span>
-          <div class="qcard-val" id="challenge-count">0/0</div>
-          <div class="qcard-label">Défis</div>
-        </div>
-        <div class="qcard passages" onclick="window.location.href='caca.html'">
-          <span class="qcard-emoji">💩</span>
-          <div class="qcard-val" id="poop-count">0</div>
-          <div class="qcard-label">Passages</div>
-        </div>
-        <div class="qcard objectifs" onclick="window.location.href='objectifs.html'">
-          <span class="qcard-emoji">🎯</span>
-          <div class="qcard-val" id="goal-percent">0%</div>
-          <div class="qcard-label">Objectifs</div>
-        </div>
-      </div>
-
-      <!-- Section: 7 jours pour 7 de suite -->
-      <div class="section-row">
-        <span class="section-title">7 jours pour 7 de suite</span>
-      </div>
-
-      <!-- Section: Objectifs -->
-      <div class="section-row">
-        <span class="section-title">Objectifs 🎯</span>
-        <a href="objectifs.html" class="section-link">Voir tout →</a>
-      </div>
-      <div class="card" id="goals-content">
-        <div class="empty">
-          <div class="empty-i">🎯</div>
-          <p style="font-weight:600;color:var(--text);font-size:16px">Aucun objectif actif</p>
-          <p style="font-size:13px;margin-top:6px;line-height:1.5">Fixez-vous des objectifs ensemble !</p>
-          <button class="btn btn-p" onclick="window.location.href='objectifs.html'" style="margin-top: 16px;">+ Nouvel objectif</button>
+        <div class="mini-week" id="week-row"></div>
+        <div class="cat-bars">
+          <div class="cat-bar-row">
+            <span class="cat-bar-label">🥗 Repas</span>
+            <div class="cat-bar-bg"><div class="cat-bar-fill" id="wbar-meals" style="background:#639922;width:0%"></div></div>
+            <span class="cat-bar-count" id="wcount-meals">0</span>
+          </div>
+          <div class="cat-bar-row">
+            <span class="cat-bar-label">⚡ Défis</span>
+            <div class="cat-bar-bg"><div class="cat-bar-fill" id="wbar-defis" style="background:#7F77DD;width:0%"></div></div>
+            <span class="cat-bar-count" id="wcount-defis">0/0</span>
+          </div>
+          <div class="cat-bar-row">
+            <span class="cat-bar-label">💩 Passages</span>
+            <div class="cat-bar-bg"><div class="cat-bar-fill" id="wbar-poop" style="background:#D85A30;width:0%"></div></div>
+            <span class="cat-bar-count" id="wcount-poop">0</span>
+          </div>
+          <div class="cat-bar-row">
+            <span class="cat-bar-label">🎯 Objectifs</span>
+            <div class="cat-bar-bg"><div class="cat-bar-fill" id="wbar-goals" style="background:#1D9E75;width:0%"></div></div>
+            <span class="cat-bar-count" id="wcount-goals">0%</span>
+          </div>
         </div>
       </div>
 
-      <!-- Section: Derniers repas -->
-      <div class="section-row">
-        <span class="section-title">Derniers repas</span>
-        <a href="repas.html" class="section-link">Voir tout →</a>
-      </div>
-      <div class="card" id="meals-content">
-        <div class="empty">
-          <div class="empty-i">🍽️</div>
-          <p style="font-weight:600;color:var(--text);font-size:16px">Aucun repas</p>
-          <p style="font-size:13px;margin-top:6px;line-height:1.5">Ajoutez un repas pour commencer.</p>
+      <!-- Objectifs -->
+      <div class="section-card-new" id="sec-objectifs">
+        <div class="sec-header-new">
+          <span class="sec-title-new">🎯 Objectifs</span>
+          <a href="objectifs.html" class="sec-link-new">Voir tout →</a>
+        </div>
+        <div id="goals-content">
+          <div class="empty-row">Aucun objectif actif</div>
         </div>
       </div>
 
-      <!-- Section: Défis en cours -->
-      <div class="section-row">
-        <span class="section-title">Défis en cours</span>
-        <a href="sport.html" class="section-link">Voir tout →</a>
-      </div>
-      <div class="card" id="challenges-content">
-        <div class="empty">
-          <div class="empty-i">⚡</div>
-          <p style="font-weight:600;color:var(--text);font-size:16px">Aucun défi</p>
-          <p style="font-size:13px;margin-top:6px;line-height:1.5">Créez un défi pour commencer.</p>
+      <!-- Repas -->
+      <div class="section-card-new" id="sec-repas">
+        <div class="sec-header-new">
+          <span class="sec-title-new">🥗 Derniers repas</span>
+          <a href="repas.html" class="sec-link-new">Voir tout →</a>
+        </div>
+        <div id="meals-content">
+          <div class="empty-row">Aucun repas enregistré</div>
         </div>
       </div>
 
-      <!-- Section: Derniers passages -->
-      <div class="section-row">
-        <span class="section-title">Derniers passages</span>
-        <a href="caca.html" class="section-link">Voir tout →</a>
-      </div>
-      <div class="card" id="poop-content">
-        <div class="empty">
-          <div class="empty-i">💩</div>
-          <p style="font-weight:600;color:var(--text);font-size:16px">Aucun passage</p>
-          <p style="font-size:13px;margin-top:6px;line-height:1.5">Ajoutez un passage pour commencer.</p>
+      <!-- Défis -->
+      <div class="section-card-new" id="sec-defis">
+        <div class="sec-header-new">
+          <span class="sec-title-new">⚡ Défis en cours</span>
+          <a href="sport.html" class="sec-link-new">Voir tout →</a>
+        </div>
+        <div id="challenges-content">
+          <div class="empty-row">Aucun défi en cours</div>
         </div>
       </div>
+
+      <!-- Passages -->
+      <div class="section-card-new" id="sec-poop">
+        <div class="sec-header-new">
+          <span class="sec-title-new">💩 Passages récents</span>
+          <a href="caca.html" class="sec-link-new">Voir tout →</a>
+        </div>
+        <div id="poop-content">
+          <div class="empty-row">Aucun passage enregistré</div>
+        </div>
+      </div>
+
     </div>
 
     <!-- Navigation -->
@@ -141,25 +284,75 @@
   </div>
 
   <script>
-    // Variables globales
-    const BRISTOL_EMOJI = { 1: "💩", 2: "💩", 3: "💩", 4: "💩", 5: "💩", 6: "💩", 7: "💩" };
-    const SCORE_BADGE = { "excellent": "b-green", "bon": "b-teal", "moyen": "b-amber", "mauvais": "b-coral" };
+    const BRISTOL_EMOJI = { 1:"💩",2:"💩",3:"💩",4:"💩",5:"💩",6:"💩",7:"💩" };
+    const SCORE_BADGE   = { "excellent":"b-green","bon":"b-teal","moyen":"b-amber","mauvais":"b-coral" };
+    const DAYS_SHORT    = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
 
-    // Fonctions pour récupérer les données
-    async function getProfile(userId) {
-      const { data } = await db.from('profiles').select('*').eq('id', userId).single();
-      return data;
+    // ── Utilitaires ────────────────────────────────────────────────────────────
+
+    function buildWeekDots() {
+      const today = new Date().getDay();
+      document.getElementById('week-row').innerHTML = DAYS_SHORT.map((d, i) => {
+        const isToday   = i === today;
+        const hasDone   = i < today || isToday;
+        const cls       = isToday ? 'day-today' : hasDone ? 'day-on' : 'day-off';
+        const mark      = hasDone ? '✓' : '';
+        return `<div class="day-dot"><span class="day-lbl">${d}</span><div class="day-circle ${cls}">${mark}</div></div>`;
+      }).join('');
     }
 
-    async function getPartner(userId) {
-      const { data } = await db.from('profiles').select('*').neq('id', userId).limit(1).single();
-      return data;
+    function updateStickyBar(meals, done, total, poop, goalPct) {
+      document.getElementById('stat-meals').textContent = meals;
+      document.getElementById('stat-defis').textContent = total > 0 ? `${done}/${total}` : '0/0';
+      document.getElementById('stat-poop').textContent  = poop;
+      document.getElementById('stat-goals').textContent = goalPct + '%';
+      document.getElementById('bar-meals').style.width  = Math.min(meals * 10, 100) + '%';
+      document.getElementById('bar-defis').style.width  = total > 0 ? Math.round((done / total) * 100) + '%' : '0%';
+      document.getElementById('bar-poop').style.width   = Math.min(poop * 10, 100) + '%';
+      document.getElementById('bar-goals').style.width  = goalPct + '%';
     }
 
-    async function getCouple(userId) {
-      const { data } = await db.from('couples').select('*').or(`user1_id.eq.${userId},user2_id.eq.${userId}`).single();
-      return data;
+    function updateWeekBars(meals, done, total, poop, goalPct) {
+      document.getElementById('wbar-meals').style.width  = Math.min(meals * 10, 100) + '%';
+      document.getElementById('wcount-meals').textContent = meals;
+      document.getElementById('wbar-defis').style.width  = total > 0 ? Math.round((done / total) * 100) + '%' : '0%';
+      document.getElementById('wcount-defis').textContent = `${done}/${total}`;
+      document.getElementById('wbar-poop').style.width   = Math.min(poop * 10, 100) + '%';
+      document.getElementById('wcount-poop').textContent  = poop;
+      document.getElementById('wbar-goals').style.width  = goalPct + '%';
+      document.getElementById('wcount-goals').textContent = goalPct + '%';
     }
+
+    function updateStreak(current, best) {
+      document.getElementById('streak-days').textContent = current;
+      document.getElementById('best-streak').textContent = best;
+      const pct = Math.min(Math.round((current / 7) * 100), 100);
+      document.getElementById('streak-fill').style.width = pct + '%';
+      document.getElementById('streak-pct').textContent  = pct + '%';
+    }
+
+    function renderRows(containerId, items, renderFn, emptyMsg) {
+      const el = document.getElementById(containerId);
+      if (!items || !items.length) {
+        el.innerHTML = `<div class="empty-row">${emptyMsg}</div>`;
+        return;
+      }
+      el.innerHTML = items.map(renderFn).join('');
+    }
+
+    function rowHtml(avatarCls, initial, name, sub, badgeCls, badgeLabel) {
+      return `
+        <div class="row-item-new">
+          <div class="av ${avatarCls}" style="font-size:10px">${initial}</div>
+          <div class="ri-info">
+            <div class="ri-name">${name}</div>
+            <div class="ri-sub">${sub}</div>
+          </div>
+          <span class="badge ${badgeCls}">${badgeLabel}</span>
+        </div>`;
+    }
+
+    // ── Data helpers ───────────────────────────────────────────────────────────
 
     async function getOrCreateStreak(coupleId) {
       const { data } = await db.from('streaks').select('*').eq('couple_id', coupleId).maybeSingle();
@@ -169,132 +362,84 @@
       return s;
     }
 
-    // Fonction pour afficher les données
+    // ── Init ───────────────────────────────────────────────────────────────────
+
     async function init() {
+      buildWeekDots();
+
       try {
-        // Vérifier l'utilisateur connecté
         const { data: { user } } = await db.auth.getUser();
-        if (!user) {
-          window.location.href = "login.html";
-          return;
-        }
+        if (!user) { window.location.href = 'login.html'; return; }
 
-        // Récupérer les données de l'utilisateur, du partenaire et du couple
-        const profile = await getProfile(user.id);
-        const partner = await getPartner(user.id);
-        const couple = await getCouple(user.id);
-        if (!couple) {
-          window.location.href = "login.html";
-          return;
-        }
+        const [{ data: profile }, { data: couple }] = await Promise.all([
+          db.from('profiles').select('*').eq('id', user.id).single(),
+          db.from('couples').select('*').or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`).single()
+        ]);
+        if (!couple) { window.location.href = 'login.html'; return; }
 
-        // Charger toutes les données en parallèle
-        const [meals, challenges, poop, streak] = await Promise.all([
+        document.getElementById('user-name').textContent = profile?.name || 'Nico';
+
+        const [mRes, cRes, pRes, streak] = await Promise.all([
           db.from('meals').select('*, profiles(name)').eq('couple_id', couple.id).order('date', { ascending: false }).limit(3),
-          db.from('challenges').select('*, profiles(name)').eq('couple_id', couple.id).order('created_at', { ascending: false }).limit(3),
+          db.from('challenges').select('*, profiles(name)').eq('couple_id', couple.id).order('created_at', { ascending: false }).limit(5),
           db.from('poop').select('*, profiles(name)').eq('couple_id', couple.id).order('logged_at', { ascending: false }).limit(3),
           getOrCreateStreak(couple.id)
         ]);
 
-        // Mettre à jour le nom de l'utilisateur
-        document.getElementById('user-name').textContent = profile.name || "Nico";
+        const meals      = mRes.data  || [];
+        const challenges = cRes.data  || [];
+        const poops      = pRes.data  || [];
+        const done       = challenges.filter(c => c.completed).length;
+        const goalPct    = challenges.length > 0 ? Math.round((done / challenges.length) * 100) : 0;
 
-        // Mettre à jour le streak
-        document.getElementById('streak-days').textContent = streak.current_streak;
-        document.getElementById('best-streak').textContent = streak.best_streak;
+        updateStreak(streak.current_streak, streak.best_streak);
+        updateStickyBar(meals.length, done, challenges.length, poops.length, goalPct);
+        updateWeekBars(meals.length, done, challenges.length, poops.length, goalPct);
 
-        // Mettre à jour les quick stats
-        document.getElementById('meal-count').textContent = meals.length;
-        const completedChallenges = challenges.filter(c => c.completed).length;
-        document.getElementById('challenge-count').textContent = `${completedChallenges}/${challenges.length}`;
-        document.getElementById('poop-count').textContent = poop.length;
-        const goalPercent = challenges.length > 0 ? Math.round((completedChallenges / challenges.length) * 100) : 0;
-        document.getElementById('goal-percent').textContent = `${goalPercent}%`;
-
-        // Afficher les données dans les sections
         // Objectifs
-        const goalsContent = document.getElementById('goals-content');
-        if (challenges.length > 0) {
-          goalsContent.innerHTML = `
-            ${challenges.map(c => `
-              <div class="row-item">
-                <div class="av ${c.user_id === profile.id ? 'av-a' : 'av-b'}" style="font-size:10px">${c.profiles?.name?.[0] || '?'}</div>
-                <div style="flex:1">
-                  <div style="font-size:13px;font-weight:500">${c.name}</div>
-                  <div style="font-size:11px;color:var(--muted)">Progrès: ${c.completed ? '100%' : '0%'}</div>
-                </div>
-                <span class="badge ${c.completed ? 'b-green' : 'b-gray'}">${c.completed ? 'Atteint' : 'En cours'}</span>
-              </div>
-            `).join('')}
-          `;
-        }
+        renderRows('goals-content', challenges, c => {
+          const avCls = c.user_id === user.id ? 'av-a' : 'av-b';
+          const init  = (c.profiles?.name || '?')[0];
+          return rowHtml(avCls, init, c.name, c.completed ? 'Atteint' : 'En cours',
+            c.completed ? 'b-green' : 'b-gray', c.completed ? '✓ Atteint' : '⏳ En cours');
+        }, 'Aucun objectif actif');
 
         // Repas
-        const mealsContent = document.getElementById('meals-content');
-        if (meals.length > 0) {
-          mealsContent.innerHTML = `
-            ${meals.map(m => `
-              <div class="row-item">
-                <div class="av ${m.user_id === profile.id ? 'av-a' : 'av-b'}" style="font-size:10px">${m.profiles?.name?.[0] || '?'}</div>
-                <div style="flex:1">
-                  <div style="font-size:13px;font-weight:500">${m.name}</div>
-                  <div style="font-size:11px;color:var(--muted)">${new Date(m.date).toLocaleDateString('fr-FR')}</div>
-                </div>
-                <span class="badge b-purple">${m.type}</span>
-              </div>
-            `).join('')}
-          `;
-        }
+        renderRows('meals-content', meals, m => {
+          const avCls = m.user_id === user.id ? 'av-a' : 'av-b';
+          const init  = (m.profiles?.name || '?')[0];
+          return rowHtml(avCls, init, m.name, new Date(m.date).toLocaleDateString('fr-FR'), 'b-purple', m.type || '');
+        }, 'Aucun repas enregistré');
 
         // Défis
-        const challengesContent = document.getElementById('challenges-content');
-        if (challenges.length > 0) {
-          challengesContent.innerHTML = `
-            ${challenges.map(c => `
-              <div class="row-item">
-                <div class="av ${c.user_id === profile.id ? 'av-a' : 'av-b'}" style="font-size:10px">${c.profiles?.name?.[0] || '?'}</div>
-                <div style="flex:1">
-                  <div style="font-size:13px;font-weight:500">${c.name}</div>
-                  <div style="font-size:11px;color:var(--muted)">${c.completed ? '✅ Terminé' : '⏳ En cours'}</div>
-                </div>
-                <span class="badge ${c.completed ? 'b-green' : 'b-gray'}">${c.completed ? 'Terminé' : 'En attente'}</span>
-              </div>
-            `).join('')}
-          `;
-        }
+        renderRows('challenges-content', challenges, c => {
+          const avCls = c.user_id === user.id ? 'av-a' : 'av-b';
+          const init  = (c.profiles?.name || '?')[0];
+          return rowHtml(avCls, init, c.name, c.completed ? '✅ Terminé' : '⏳ En cours',
+            c.completed ? 'b-green' : 'b-gray', c.completed ? 'Terminé' : 'En attente');
+        }, 'Aucun défi en cours');
 
         // Passages
-        const poopContent = document.getElementById('poop-content');
-        if (poop.length > 0) {
-          poopContent.innerHTML = `
-            ${poop.map(p => `
-              <div class="row-item">
-                <div class="av ${p.user_id === profile.id ? 'av-a' : 'av-b'}" style="font-size:10px">${p.profiles?.name?.[0] || '?'}</div>
-                <div style="flex:1">
-                  <div style="font-size:13px;font-weight:500">${BRISTOL_EMOJI[p.bristol_type]} Type ${p.bristol_type}</div>
-                  <div style="font-size:11px;color:var(--muted)">${new Date(p.logged_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</div>
-                </div>
-                <span class="badge ${SCORE_BADGE[p.score] || 'b-gray'}">${p.score}</span>
-              </div>
-            `).join('')}
-          `;
-        }
+        renderRows('poop-content', poops, p => {
+          const avCls = p.user_id === user.id ? 'av-a' : 'av-b';
+          const init  = (p.profiles?.name || '?')[0];
+          const time  = new Date(p.logged_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+          return rowHtml(avCls, init, `${BRISTOL_EMOJI[p.bristol_type]} Type ${p.bristol_type}`, time,
+            SCORE_BADGE[p.score] || 'b-gray', p.score);
+        }, 'Aucun passage enregistré');
 
       } catch (error) {
-        console.error("Erreur lors du chargement des données :", error);
-        // Afficher un message d'erreur dans la page
+        console.error('Erreur lors du chargement des données :', error);
         document.querySelector('.page').innerHTML = `
           <div class="empty">
             <div class="empty-i">⚠️</div>
             <p style="font-weight:600;color:var(--coral);font-size:16px">Erreur de chargement</p>
             <p style="font-size:13px;margin-top:6px;line-height:1.5">Impossible de charger les données. Vérifie ta connexion ou rafraîchis la page.</p>
             <button class="btn btn-p" onclick="location.reload()">Rafraîchir</button>
-          </div>
-        `;
+          </div>`;
       }
     }
 
-    // Démarrer l'application quand le DOM est chargé
     document.addEventListener('DOMContentLoaded', init);
   </script>
 </body>
